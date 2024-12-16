@@ -19,11 +19,9 @@ import { setUserDetails } from "../features/profileSlice";
 import * as ImagePicker from 'expo-image-picker';
 import * as NavigationBar from 'expo-navigation-bar';
 import { landingPageStyles } from "./LandingPage";
-import * as FileSystem from 'expo-file-system';
 import { addImage } from "../ImageAddFunction";
 import { setProfileImgLink } from "../features/profileSlice";
 import { setIsChangedToTrue , setIsChangedToFalse } from "../features/isProfileChangedSlice";
-// import { Image as ImageCompressor } from "react-native-compressor";
 
 const EditProfilePage = ({ navigation }) => {
   const sessionData = useSelector((state) => state.profileReducer?.sessionData);
@@ -35,24 +33,6 @@ const EditProfilePage = ({ navigation }) => {
   const [userBio, setUserBio] = useState(data?.userBio);
   const [userAddress, setUserAddress] = useState(data?.userAddress);
   const [userDisplayName, setUserDisplayName] = useState(data?.userDisplayName);
-
-
-  useEffect(()=>{
-    const getPublicImageUrl = async(storageName, sessionData) =>{
-      const fileName = `${sessionData?.session.user.id}.jpg`;
-    
-      const { data, error } = await supabase
-        .storage
-        .from(storageName)
-        .getPublicUrl(fileName);
-    
-      if (error) {
-        console.error('Error fetching public URL:', error);
-        return null;
-      }
-    }
-    // Example usage
-  },[]);
 
 // Function to pick an image and upload it as ArrayBuffer
   // Function to pick an image, compress it, and upload it as ArrayBuffer
@@ -125,7 +105,7 @@ const EditProfilePage = ({ navigation }) => {
           style={{ height: 100, width: 100 ,borderRadius: 50}}
         />
         <TouchableWithoutFeedback onPress={()=>{
-          addImage(sessionData,"profile images",dispatch,setProfileImgLink);
+          addImage(sessionData,"profile images",dispatch,setProfileImgLink,null);
           dispatch(setIsChangedToTrue());
           // dispatch(setIsChangedToTrue());
           }}>

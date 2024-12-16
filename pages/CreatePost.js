@@ -6,12 +6,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { loginPageStyles } from "./LoginPage";
-import Basic from "../components/Basic";
-// import {
-//   actions,
-//   RichEditor,
-//   RichToolbar,
-// } from "react-native-pell-rich-editor";
+import PostEditor from "../components/PostEditor";
 import * as NavigationBar from "expo-navigation-bar";
 
 const CreatePost = ({ navigation }) => {
@@ -42,7 +37,7 @@ const CreatePost = ({ navigation }) => {
         Create Post
       </Text>
 
-      <Basic />
+      <PostEditor />
 
       {/* <RichEditor
         ref={richText}

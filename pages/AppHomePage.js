@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Text,
   View,
@@ -6,20 +6,67 @@ import {
   TouchableWithoutFeedback,
   StyleSheet,
   SafeAreaView,
+  StatusBar,
+  ScrollView,
+  ActivityIndicator,
 } from "react-native";
+// import ScrollView from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../lib/supabase";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUserDetails } from "../features/profileSlice";
-import * as NavigationBar from 'expo-navigation-bar';
-import { getPublicImageUrl } from "../ImageAddFunction";
-import Icon from 'react-native-vector-icons/FontAwesome';
+import * as NavigationBar from "expo-navigation-bar";
+import Icon from "react-native-vector-icons/FontAwesome";
 import CustomNavigationTab from "../components/CustomNavigationTab";
-
+import Post from "../components/Post";
 
 const AppHomePage = ({ navigation }) => {
-
+  const [dataReceived, setDataReceived] = useState([]);
+  const [likesTableData, setLikesTableData] = useState([]);
   const dispatch = useDispatch();
+  const profileData = useSelector((state) => state?.profileReducer);
+  const userId = profileData?.sessionData?.session.user.id;
+
+  const getLikesTableData = async () => {
+    const { data, error } = await supabase.from("likes").select("post_id").eq("user_id", userId);
+    if (error) {
+      console.log("Error occured while getting likes table data: ", error);
+    }else{
+      setLikesTableData(data);
+    }
+  };
+
+  const postIds = likesTableData?.map(item => item.post_id);
+  console.log("postIds:",postIds);
+
+  const getData = async (id) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id",id)
+      .limit(1);
+    if (error) {
+      console.log("Error: ", error);
+    }
+    dispatch(setUserDetails(data[0]));
+  };
+
+  const getData2 = async () => {
+    const { data, error } = await supabase
+      .from("posts")
+      .select("media_url,content,post_id")
+      .order("created_at", { ascending: false }); // Replace with the actual userId
+
+    console.log("The image urls of posts data is: ", data.length);
+    setDataReceived(data);
+
+    if (error) {
+      console.error("Error fetching media_url:", error);
+    } else {
+      console.log("Fetched media_url:", data);
+    }
+  };
+
   const restoreSession = async () => {
     try {
       const sessionData = await AsyncStorage.getItem("userSession");
@@ -49,69 +96,72 @@ const AppHomePage = ({ navigation }) => {
   };
 
   useEffect(() => {
-    NavigationBar.setBackgroundColorAsync('#FFFFFF');
+    NavigationBar.setBackgroundColorAsync("#FFFFFF");
     restoreSession();
-    const getData = async (id) => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", id)
-        .limit(1);
-      if (error) {
-        console.log("Error: ", error);
-      }
-      dispatch(setUserDetails(data[0]));
-    };
     getData(23456);
+    getData2();
+    getLikesTableData();
   }, []);
+
   return (
-    <SafeAreaView style={{ flex: 1,backgroundColor: "#fff",paddingVertical: 5,zIndex: -10}}>
+    <View style={styles.container}>
       <View
         style={{
-          paddingTop: 20,
-          paddingHorizontal: 20, 
-          height: 60,
+          paddingHorizontal: 20,
+          paddingBottom: 10,
           display: "flex",
           flexDirection: "row",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <Text style={{ fontSize: 30, fontWeight: 700 }}>LinkUp</Text>
-        <View
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            gap: 15,
-            alignItems: "center",
-          }}
-        >
-          <Icon name="heart-o" size={28} color="#000"/>
-
-          <TouchableWithoutFeedback>
-            <Icon name="paper-plane-o" size={28} color="#000"/>
-          </TouchableWithoutFeedback>
-
-          {/* <TouchableWithoutFeedback
-            onPress={() => navigation?.navigate("Profile")}
-          >
-            <View style={styles.profileBox}>
-              <Image
-                source={require("../assets/icons/avatar.png")}
-                style={{ height: 22, width: 22 }}
-              />
-            </View>
-          </TouchableWithoutFeedback> */}
+        <Text style={{ fontSize: 30, fontWeight: "bold" }}>LinkUp</Text>
+        <View style={{ display: "flex", flexDirection: "row", gap: 10 }}>
+          <Icon name="heart-o" size={28} color="#000" />
+          <Icon name="paper-plane-o" size={28} color="#000" />
         </View>
       </View>
-      <CustomNavigationTab navigation={navigation}/>
-    </SafeAreaView>
+      {dataReceived?.length > 0 ? (
+        <ScrollView
+          style={{ height: "92%", width: "100%" }}
+          showsVerticalScrollIndicator={false}
+        >
+          {dataReceived.map((element) => {
+            return (
+              <View>
+                <Post
+                  url={element?.media_url}
+                  content={element?.content}
+                  post_id={element?.post_id}
+                  postIds={postIds}
+                />
+              </View>
+            );
+          })}
+        </ScrollView>
+      ) : (
+        <ActivityIndicator color={"#33bc54"} size={50} />
+      )}
+
+      <CustomNavigationTab />
+    </View>
   );
 };
 
 export default AppHomePage;
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingBottom: 60,
+    // zIndex: -10,
+    // marginBottom: 60
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   profileBox: {
     height: 34,
     width: 34,

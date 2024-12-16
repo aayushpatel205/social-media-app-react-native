@@ -91,11 +91,11 @@ export default CustomNavigationTab;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     backgroundColor: "#f8f8f8",
   },
   screenContainer: {
-    flex: 1,
+    // flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -105,6 +105,9 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   navbar: {
+    display: "flex",
+    justifyContent: "center",
+    paddingBottom: 10,
     // borderWidth: 1,
     position: "absolute",
     bottom: 0,
@@ -112,7 +115,7 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     backgroundColor: "#fff",
-    height: 60,
+    height: 55,
     // borderTopLeftRadius: 20,
     // borderTopRightRadius: 20,
     // elevation: 8,
@@ -122,8 +125,10 @@ const styles = StyleSheet.create({
     // shadowOffset: { width: 0, height: 5 },
     justifyContent: "space-around",
     alignItems: "center",
+    zindex: 20
   },
   navItem: {
+    display: "flex",
     justifyContent: "center",
     alignItems: "center",
     flex: 1,

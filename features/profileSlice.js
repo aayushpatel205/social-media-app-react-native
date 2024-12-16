@@ -7,7 +7,7 @@ const initialState = {
   userDisplayName: "",
   profileImg: "",
   sessionData: null,
-  posts: [],
+  posts: "",
 };
 
 export const profileSlice = createSlice({

@@ -14,15 +14,28 @@ import {
 } from "react-native-pell-rich-editor";
 import { landingPageStyles } from "../pages/LandingPage";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
-import { inputBoxStyles } from "./InputField";
-import Icon from "react-native-vector-icons/FontAwesome";
-import { addImage } from "../ImageAddFunction";
+import { addImage, addToPostsTable } from "../ImageAddFunction";
+import { useSelector, useDispatch } from "react-redux";
 
-const Basic = () => {
+const PostEditor = () => {
+  const dispatch = useDispatch();
   const richText = useRef();
+  const profileData = useSelector((state) => state?.profileReducer);
+  const user_id = profileData?.sessionData?.session.user.id;
   const [captionText, setCaptionText] = useState();
   const [postUrl, setPostUrl] = useState();
+  const [editorIsDiabled, setEditorIsDisabled] = useState(false);
+
+  const uploadPostImage = async () => {
+    const urlToUpload = await addImage(
+      profileData?.sessionData,
+      "posts-images",
+      dispatch,
+      null,
+      postUrl,
+    );
+    await addToPostsTable(user_id, urlToUpload,captionText);
+  };
 
   // const richTextHandle = (descriptionText) => {
   //   if (descriptionText) {
@@ -61,18 +74,43 @@ const Basic = () => {
       <View style={styles.container}>
         <View
           style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
             height: 250,
-            borderColor: "#d3d3d3",
-            borderWidth: 1,
+            borderColor: "#b9e6c1",
+            borderWidth: 2,
             width: "100%",
             marginBottom: 20,
             borderRadius: 15,
           }}
         >
-          <Image
-            source={{ uri: postUrl }}
-            style={{ height: "100%", width: "100%", borderRadius: 16 }}
-          />
+          {postUrl ? (
+            <Image
+              source={{ uri: postUrl }}
+              style={{ height: "100%", width: "100%", borderRadius: 16 }}
+            />
+          ) : (
+            <Text style={{ color: "#d3d3d3", fontSize: 25 }}>
+              Upload a post image
+            </Text>
+          )}
+          {postUrl && (
+            <TouchableWithoutFeedback
+              onPress={() => {
+                setPostUrl("");
+              }}
+            >
+              <View
+                style={{ position: "absolute", top: 10, right: 55, zIndex: 10 }}
+              >
+                <Image
+                  source={require("../assets/icons/bin.png")}
+                  style={{ height: 35, width: 35 }}
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          )}
           <TouchableWithoutFeedback
             onPress={async () => {
               const postImgUrl = await addPostImg();
@@ -95,6 +133,9 @@ const Basic = () => {
           <RichEditor
             onChange={(descriptionText) => {
               setCaptionText(descriptionText);
+              if(descriptionText?.length > 200){
+                setEditorIsDisabled(true);
+              }
             }}
             ref={richText}
             // onChange={richTextHandle}
@@ -102,16 +143,15 @@ const Basic = () => {
             androidHardwareAccelerationDisabled={true}
             style={styles.richTextEditorStyle}
             initialHeight={250}
+            disabled={editorIsDiabled}
           />
           <RichToolbar
             editor={richText}
-            selectedIconTint="#33bc54"
-            iconTint="#312921"
+            selectedIconTint="#1b6e31"
+            iconTint="#8c8c8c"
             actions={[
               actions.setBold,
               actions.setItalic,
-              actions.insertBulletsList,
-              actions.insertOrderedList,
               actions.setStrikethrough,
               actions.setUnderline,
             ]}
@@ -154,11 +194,7 @@ const Basic = () => {
         </View> */}
         {/* <InputField /> */}
 
-        <TouchableWithoutFeedback
-          onPress={() => {
-            addImage(null, 'posts-images', null, null, postUrl);
-          }}
-        >
+        <TouchableWithoutFeedback onPress={() => uploadPostImage()}>
           <View style={landingPageStyles.button}>
             <Text style={landingPageStyles.btnText}>Post</Text>
           </View>
@@ -186,15 +222,20 @@ const styles = StyleSheet.create({
   },
 
   richTextEditorStyle: {
-    borderBottomRadius: 7,
-    borderWidth: 2,
-    borderColor: "#d3d3d3", // Gray border for the editor
+    overflow: "hidden",
+    borderRadius: 10,
+    borderTopEndRadius: 0,
+    borderTopStartRadius: 0,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: "#b9e6c1", // Gray border for the editor
     fontSize: 20,
     height: 240, // Set the same size for the editor
   },
 
   richTextToolbarStyle: {
-    backgroundColor: "#d3d3d3", // Gray background for the toolbar
+    backgroundColor: "#b9e6c1", // Light Green background for the toolbar
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
@@ -224,4 +265,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Basic;
+export default PostEditor;

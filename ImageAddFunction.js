@@ -3,26 +3,52 @@ import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { supabase } from "./lib/supabase";
 import { decode as atob } from "base64-arraybuffer";
-import { useSelector , useDispatch } from "react-redux";
-import { setProfileImgLink } from "./features/profileSlice";
-import uuid from 'react-native-uuid';
+import { useSelector, useDispatch } from "react-redux";
+import { setPostDetails, setProfileImgLink } from "./features/profileSlice";
+import uuid from "react-native-uuid";
 
-export const getPublicImageUrl = (storageName, sessionData , postId) =>{
-  const fileName = storageName === "profile images" ? `${sessionData?.session.user.id}.jpg` : `${postId}.jpg`;
-  const { data, error } = supabase
-    .storage
+export const addToPostsTable = async (user_id, uploadedUrl,captionText) => {
+  console.log("The user id is: ", user_id);
+  const { data, error } = await supabase.from("posts").insert({
+    media_url: uploadedUrl,
+    user_id: user_id,
+    content: captionText
+  });
+  if (error) {
+    console.warn("Could not fill data in posts table !!");
+  }else{
+    console.log("Data filled in posts table successfully !!");
+  }
+};
+
+export const getPublicImageUrl = (storageName, sessionData, postId) => {
+  const fileName =
+    storageName === "profile images"
+      ? `${sessionData?.session.user.id}.jpg`
+      : `${postId}.jpg`;
+  const { data, error } = supabase.storage
     .from(storageName)
     .getPublicUrl(fileName);
+  console.log("The data url received: ", data?.publicUrl);
 
   if (error) {
-    console.error('Error fetching public URL:', error);
+    console.error("Error fetching public URL:", error);
     return null;
   }
   const timestamp = new Date().getTime();
-  return `${data?.publicUrl}?cache_buster=${timestamp}`;
-}
 
-export const addImage = async(sessionData, storageName, dispatch, setProfileImgLink, selectedImage) => {
+  return `${data?.publicUrl}?cache_buster=${timestamp}`;
+};
+
+export const addImage = async (
+  sessionData,
+  storageName,
+  dispatch,
+  setPicture,
+  selectedImage,
+  setUploadedUrl,
+  useSelector
+) => {
   try {
     let _image;
     if (storageName === "posts-images") {
@@ -31,7 +57,7 @@ export const addImage = async(sessionData, storageName, dispatch, setProfileImgL
         return;
       }
       _image = selectedImage; // Use the already selected image data
-    } else {
+    } else if (storageName === "profile images") {
       // Launch image picker for other storage types
       _image = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -46,26 +72,25 @@ export const addImage = async(sessionData, storageName, dispatch, setProfileImgL
         return;
       }
     }
+    console.warn("Selected image: ", _image);
     // Import the Image compression API
     const { Image: ImageCompressor } = require("react-native-compressor");
 
     // Compress the selected image
     const compressedUri = await ImageCompressor.compress(
-      _image,
+      storageName === "posts-images" ? _image : _image?.assets[0].uri,
       {
         compressionMethod: "auto", // Use 'manual' for more control
         maxWidth: 1000, // Adjust maxWidth for resized dimensions
         quality: 0.7, // Quality of the compression (0.7 = 70%)
       }
     );
+    console.warn("compressed uri: ", compressedUri);
 
     // Read compressed image and convert it to Base64
-    const compressedBase64 = await FileSystem.readAsStringAsync(
-      compressedUri,
-      {
-        encoding: FileSystem.EncodingType.Base64,
-      }
-    );
+    const compressedBase64 = await FileSystem.readAsStringAsync(compressedUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
     console.warn("Image compressed successfully !!");
     const postId = uuid.v4().toString();
 
@@ -77,17 +102,15 @@ export const addImage = async(sessionData, storageName, dispatch, setProfileImgL
       postId
     );
     console.warn("uploaded Url", uploadedUrl);
-
-    if (storageName === "profile images") {
-      dispatch(setProfileImgLink(uploadedUrl));
-    } else {
-      //
+    if(storageName === "profile images"){
+      dispatch(setPicture(uploadedUrl));
+    }else{
+      return uploadedUrl;
     }
   } catch (error) {
     console.error("Error during image selection or compression:", error);
   }
 };
-
 
 // Function to convert base64 to ArrayBuffer and upload
 const uploadImageAsArrayBuffer = async (
@@ -99,7 +122,10 @@ const uploadImageAsArrayBuffer = async (
   try {
     // Decode Base64 data to binary data
     const binaryString = atob(base64Data);
-    const fileName = storageName === "profile images" ? `${sessionData?.session.user.id}.jpg` : `${postId}.jpg`;
+    const fileName =
+      storageName === "profile images"
+        ? `${sessionData?.session.user.id}.jpg`
+        : `${postId}.jpg`;
     const { data, error } = await supabase.storage
       .from(storageName)
       .upload(fileName, binaryString, {
@@ -111,9 +137,8 @@ const uploadImageAsArrayBuffer = async (
     if (error) {
       console.error("Error uploading image:", error);
       return null;
-    } 
-    return getPublicImageUrl(storageName, sessionData , postId);
-
+    }
+    return getPublicImageUrl(storageName, sessionData, postId);
   } catch (error) {
     console.error("Unexpected error during image upload:", error);
     return null;
