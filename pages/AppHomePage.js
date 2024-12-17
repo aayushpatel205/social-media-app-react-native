@@ -1,12 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Text,
   View,
-  Image,
-  TouchableWithoutFeedback,
   StyleSheet,
-  SafeAreaView,
-  StatusBar,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
@@ -19,31 +15,43 @@ import * as NavigationBar from "expo-navigation-bar";
 import Icon from "react-native-vector-icons/FontAwesome";
 import CustomNavigationTab from "../components/CustomNavigationTab";
 import Post from "../components/Post";
+import CommentsSection from "../components/CommentsSection";
 
 const AppHomePage = ({ navigation }) => {
   const [dataReceived, setDataReceived] = useState([]);
   const [likesTableData, setLikesTableData] = useState([]);
+  const [commentPostId, setCommentPostId] = useState(null);
   const dispatch = useDispatch();
   const profileData = useSelector((state) => state?.profileReducer);
   const userId = profileData?.sessionData?.session.user.id;
+  const commentsSectionRef = useRef();
 
+  useEffect(() => {
+    if (commentPostId != null) {
+      console.log("Comment post id: ", commentPostId);
+      commentsSectionRef.current.show();
+    }
+  }, [commentPostId]);
   const getLikesTableData = async () => {
-    const { data, error } = await supabase.from("likes").select("post_id").eq("user_id", userId);
+    const { data, error } = await supabase
+      .from("likes")
+      .select("post_id")
+      .eq("user_id", userId);
     if (error) {
       console.log("Error occured while getting likes table data: ", error);
-    }else{
+    } else {
       setLikesTableData(data);
     }
   };
 
-  const postIds = likesTableData?.map(item => item.post_id);
-  console.log("postIds:",postIds);
+  const postIds = likesTableData?.map((item) => item.post_id);
+  console.log("postIds:", postIds);
 
   const getData = async (id) => {
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id",id)
+      .eq("id", id)
       .limit(1);
     if (error) {
       console.log("Error: ", error);
@@ -54,7 +62,7 @@ const AppHomePage = ({ navigation }) => {
   const getData2 = async () => {
     const { data, error } = await supabase
       .from("posts")
-      .select("media_url,content,post_id")
+      .select("*")
       .order("created_at", { ascending: false }); // Replace with the actual userId
 
     console.log("The image urls of posts data is: ", data.length);
@@ -126,14 +134,14 @@ const AppHomePage = ({ navigation }) => {
           style={{ height: "92%", width: "100%" }}
           showsVerticalScrollIndicator={false}
         >
-          {dataReceived.map((element) => {
+          {dataReceived.map((element, id) => {
             return (
               <View>
                 <Post
-                  url={element?.media_url}
-                  content={element?.content}
-                  post_id={element?.post_id}
+                  element={element}
                   postIds={postIds}
+                  id={id}
+                  setCommentPostId={setCommentPostId}
                 />
               </View>
             );
@@ -144,6 +152,11 @@ const AppHomePage = ({ navigation }) => {
       )}
 
       <CustomNavigationTab />
+      <CommentsSection
+        ref={commentsSectionRef}
+        setCommentPostId={setCommentPostId}
+        element={dataReceived[commentPostId]}
+      />
     </View>
   );
 };

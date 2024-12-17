@@ -7,16 +7,17 @@ import { useSelector, useDispatch } from "react-redux";
 import { setPostDetails, setProfileImgLink } from "./features/profileSlice";
 import uuid from "react-native-uuid";
 
-export const addToPostsTable = async (user_id, uploadedUrl,captionText) => {
-  console.log("The user id is: ", user_id);
+export const addToPostsTable = async (user_id, uploadedUrl, captionText,userDisplayName,profileImg) => {
   const { data, error } = await supabase.from("posts").insert({
     media_url: uploadedUrl,
     user_id: user_id,
-    content: captionText
+    content: captionText,
+    userDisplayName,
+    profileImg,
   });
   if (error) {
     console.warn("Could not fill data in posts table !!");
-  }else{
+  } else {
     console.log("Data filled in posts table successfully !!");
   }
 };
@@ -102,9 +103,9 @@ export const addImage = async (
       postId
     );
     console.warn("uploaded Url", uploadedUrl);
-    if(storageName === "profile images"){
+    if (storageName === "profile images") {
       dispatch(setPicture(uploadedUrl));
-    }else{
+    } else {
       return uploadedUrl;
     }
   } catch (error) {

@@ -20,21 +20,24 @@ import { useSelector, useDispatch } from "react-redux";
 const PostEditor = () => {
   const dispatch = useDispatch();
   const richText = useRef();
-  const profileData = useSelector((state) => state?.profileReducer);
-  const user_id = profileData?.sessionData?.session.user.id;
+  // const profileData = useSelector((state) => state?.profileReducer);
+  const { userDisplayName, profileImg , sessionData } = useSelector(
+    (state) => state?.profileReducer
+  );
+  const user_id = sessionData?.session.user.id;
   const [captionText, setCaptionText] = useState();
   const [postUrl, setPostUrl] = useState();
   const [editorIsDiabled, setEditorIsDisabled] = useState(false);
 
   const uploadPostImage = async () => {
     const urlToUpload = await addImage(
-      profileData?.sessionData,
+      sessionData,
       "posts-images",
       dispatch,
       null,
       postUrl,
     );
-    await addToPostsTable(user_id, urlToUpload,captionText);
+    await addToPostsTable(user_id, urlToUpload,captionText,userDisplayName,profileImg);
   };
 
   // const richTextHandle = (descriptionText) => {
