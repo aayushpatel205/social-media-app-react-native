@@ -11,21 +11,25 @@ import {
 import { loginPageStyles } from "./LoginPage";
 import { useSelector, useDispatch } from "react-redux";
 import * as NavigationBar from "expo-navigation-bar";
-import FeatherIcon from 'react-native-vector-icons/Feather';
-import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
+import FeatherIcon from "react-native-vector-icons/Feather";
+import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
+import Icon from "react-native-vector-icons/FontAwesome";
 import { changeNavigation } from "../features/navigationSlice";
 
 const ProfilePage = ({ navigation }) => {
   //sessionData?.session.user.id
   const dispatch = useDispatch();
-  const isChanged = useSelector((state) => state?.isChangedReducer.value);
   const profileData = useSelector((state) => state?.profileReducer);
   const userId = profileData?.sessionData?.session.user.id;
-  const imgPath = profileData?.profileImg
-    ? {
-        uri: profileData?.profileImg,
-      }
-    : require("../assets/icons/user.png");
+  // const imgPath = profileData?.profileImg
+  //   ? {
+  //       uri: profileData?.profileImg,
+  //     }
+  //   : require("../assets/icons/user.png");
+
+  useEffect(() => {
+    console.warn(profileData?.profileImg);
+  })
 
   return (
     <View
@@ -46,7 +50,7 @@ const ProfilePage = ({ navigation }) => {
       >
         <View style={loginPageStyles.buttonBox}>
           <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-            <FeatherIcon name="chevron-left" size={38}/>
+            <FeatherIcon name="chevron-left" size={38} />
             {/* <Image
               source={require("../assets/icons/left-arrow.png")}
               style={{ height: 25, width: 25 }}
@@ -78,7 +82,11 @@ const ProfilePage = ({ navigation }) => {
           }}
         >
           <TouchableOpacity>
-              <FontAwesomeIcon name="sign-out" size={30} style={{marginLeft: 6}}/>
+            <FontAwesomeIcon
+              name="sign-out"
+              size={30}
+              style={{ marginLeft: 6 }}
+            />
 
             {/* <Image
               source={require("../assets/icons/power-button.png")}
@@ -91,10 +99,16 @@ const ProfilePage = ({ navigation }) => {
         </View>
       </View>
       <View style={profilePageStyles.profileBox}>
-        <Image
-          source={imgPath}
-          style={{ height: 100, width: 100, borderRadius: 50 }}
-        />
+        {profileData.profileImg ? (
+          <Image
+            source={{ uri: profileData?.profileImg }}
+            resizeMode="cover"
+            // source={{ uri: data?.profileImg }}
+            style={{ height: 100, width: 100, borderRadius: 50 }}
+          />
+        ) : (
+          <Icon name="user" size={65} color="#666" />
+        )}
       </View>
       <Text
         style={{
@@ -109,7 +123,7 @@ const ProfilePage = ({ navigation }) => {
       </Text>
       <Text
         style={{
-          fontSize: 22,
+          fontSize: 25,
           color: "#9e9e9e",
           textAlign: "center",
           fontWeight: 700,
@@ -204,7 +218,7 @@ export const profilePageStyles = StyleSheet.create({
   profileBox: {
     width: 100,
     height: 100,
-    marginTop: 25,
+    marginTop: 15,
     alignSelf: "center",
     display: "flex",
     justifyContent: "center",

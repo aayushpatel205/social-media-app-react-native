@@ -38,24 +38,6 @@ const CreatePost = ({ navigation }) => {
       </Text>
 
       <PostEditor />
-
-      {/* <RichEditor
-        ref={richText}
-        onChange={(descriptionText) => {
-          console.log("descriptionText:", descriptionText);
-        }}
-      /> */}
-
-      {/* <RichToolbar
-        editor={richText}
-        actions={[
-          actions.setBold,
-          actions.setItalic,
-          actions.setUnderline,
-          actions.heading1,
-        ]}
-        iconMap={{ [actions.heading1]: handleHead }}
-      /> */}
     </View>
   );
 };

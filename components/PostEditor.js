@@ -16,12 +16,13 @@ import { landingPageStyles } from "../pages/LandingPage";
 import * as ImagePicker from "expo-image-picker";
 import { addImage, addToPostsTable } from "../ImageAddFunction";
 import { useSelector, useDispatch } from "react-redux";
+import Toast from "react-native-toast-message";
 
 const PostEditor = () => {
   const dispatch = useDispatch();
   const richText = useRef();
   // const profileData = useSelector((state) => state?.profileReducer);
-  const { userDisplayName, profileImg , sessionData } = useSelector(
+  const { userDisplayName, profileImg, sessionData } = useSelector(
     (state) => state?.profileReducer
   );
   const user_id = sessionData?.session.user.id;
@@ -35,9 +36,15 @@ const PostEditor = () => {
       "posts-images",
       dispatch,
       null,
-      postUrl,
+      postUrl
     );
-    await addToPostsTable(user_id, urlToUpload,captionText,userDisplayName,profileImg);
+    await addToPostsTable(
+      user_id,
+      urlToUpload,
+      captionText,
+      userDisplayName,
+      profileImg
+    );
   };
 
   // const richTextHandle = (descriptionText) => {
@@ -136,7 +143,7 @@ const PostEditor = () => {
           <RichEditor
             onChange={(descriptionText) => {
               setCaptionText(descriptionText);
-              if(descriptionText?.length > 200){
+              if (descriptionText?.length > 200) {
                 setEditorIsDisabled(true);
               }
             }}
@@ -159,6 +166,13 @@ const PostEditor = () => {
               actions.setUnderline,
             ]}
             style={styles.richTextToolbarStyle}
+          />
+          <Toast
+            style={{position: 'absolute',top: 0}}
+            text2Style={{
+              fontSize: 17,
+              fontWeight: "600",
+            }}
           />
         </View>
         {/* {showDescError && (
@@ -197,7 +211,18 @@ const PostEditor = () => {
         </View> */}
         {/* <InputField /> */}
 
-        <TouchableWithoutFeedback onPress={() => uploadPostImage()}>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            if (postUrl) {
+              uploadPostImage();
+            } else {
+              Toast.show({
+                type: "error",
+                text2: "Please select the post image 📷",
+              });
+            }
+          }}
+        >
           <View style={landingPageStyles.button}>
             <Text style={landingPageStyles.btnText}>Post</Text>
           </View>

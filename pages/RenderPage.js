@@ -34,7 +34,6 @@ const RenderPage = ({ navigation }) => {
     return (
       <View style={{ flex: 1, backgroundColor: "#fff" }}>
         <EditProfilePage navigation={navigation} />
-        <CustomNavigationTab />
       </View>
     );
   }

@@ -1,11 +1,10 @@
-import React, { useState, useEffect , useRef } from "react";
-import { View, Text, Image, StyleSheet, Dimensions } from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
 import RenderFormattedText from "./RenderFormattedText";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useSelector } from "react-redux";
 import { supabase } from "../lib/supabase";
-import { SheetManager } from "react-native-actions-sheet";
-// import CommentsSection from "./CommentsSection";
+import { Menu, MenuItem, MenuDivider } from 'react-native-material-menu';
 
 const formatTimestampToMonthDay = (timestamp) => {
   const date = new Date(timestamp);
@@ -13,17 +12,43 @@ const formatTimestampToMonthDay = (timestamp) => {
   return date.toLocaleDateString("en-US", options);
 };
 
-const Post = ({ element, postIds , setCommentPostId , id}) => {
+const Post = ({ element, postIds, setCommentPostId, id }) => {
   const [imageDimensions, setImageDimensions] = useState({
     width: 0,
     height: 0,
   });
   const [isLikedPost, setIsLikedPost] = useState(false);
+  const [noOfLikes, setNoOfLikes] = useState();
+  const [noOfComments, setNoOfComments] = useState();
   const profileData = useSelector((state) => state?.profileReducer);
-  const userId = profileData?.sessionData?.session.user.id;
+  const userId = profileData?.sessionData?.session?.user?.id;
   const formattedDate = formatTimestampToMonthDay(element?.created_at);
+  const [visible, setVisible] = useState(false);
 
-  // Example usage: // Output: "December 16" (or the current date)
+  const hideMenu = () => setVisible(false);
+  const showMenu = () => setVisible(true);
+
+  const getNoOfLikes = async () => {
+    const { data, error } = await supabase
+      .from("likes")
+      .select("user_id")
+      .eq("post_id", element?.post_id);
+    if (error) {
+      console.error("Error fetching data:", error);
+    }
+    setNoOfLikes(data?.length || 0);
+  };
+
+  const getNoOfComments = async () => {
+    const { data, error } = await supabase
+      .from("comments")
+      .select("user_id")
+      .eq("post_id", element?.post_id);
+    if (error) {
+      console.error("Error fetching data:", error);
+    }
+    setNoOfComments(data?.length || 0);
+  };
 
   const deleteLike = async (post_id, userId) => {
     const { data, error } = await supabase
@@ -33,8 +58,6 @@ const Post = ({ element, postIds , setCommentPostId , id}) => {
 
     if (error) {
       console.error("Error deleting row:", error);
-    } else {
-      console.log("Deleted row:", data);
     }
   };
 
@@ -45,11 +68,9 @@ const Post = ({ element, postIds , setCommentPostId , id}) => {
     });
     if (error) {
       console.warn("Could not fill data in likes table !!");
-    } else {
-      console.log("Data filled in likes table successfully !!");
     }
   };
-  // Dynamically calculate image dimensions to maintain aspect ratio
+
   useEffect(() => {
     if (element?.media_url) {
       Image.getSize(
@@ -73,6 +94,15 @@ const Post = ({ element, postIds , setCommentPostId , id}) => {
     setIsLikedPost(postIds?.includes(element.post_id));
   }, [postIds, element.post_id]);
 
+  useEffect(() => {
+    getNoOfLikes();
+    getNoOfComments();
+  }, []);
+
+  if (!element?.media_url || noOfLikes == null || noOfComments == null) {
+    return null; // Conditionally render nothing if requirements are not met
+  }
+
   return (
     <View style={styles.postContainer}>
       <View
@@ -86,21 +116,44 @@ const Post = ({ element, postIds , setCommentPostId , id}) => {
           alignItems: "center",
         }}
       >
-        {element.profileImg != "NULL" ? (
+        {element.user_id === userId ? (
           <Image
-            source={{ uri: element?.profileImg }}
+            source={{ uri: profileData?.profileImg }}
+            style={{ width: 40, height: 40, borderRadius: 20 }}
+          />
+        ) : element?.profileImg ? (
+          <Image
+            source={{ uri: element.profileImg }}
             style={{ width: 40, height: 40, borderRadius: 20 }}
           />
         ) : (
           <Icon name="user" size={32} color="#000" />
         )}
-        <View>
-          <Text style={{ fontSize: 16, color: "#555555" }}>
-            {element.userDisplayName != "NULL"
-              ? element.userDisplayName
-              : "Anonymous"}
-          </Text>
-          <Text style={{ color: "#555555" }}>{formattedDate}</Text>
+
+        <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "85%" }}>
+          <View>
+            <Text style={{ fontSize: 16, color: "#555555" }}>
+              {element.userDisplayName != "NULL"
+                ? element.userDisplayName
+                : "Anonymous"}
+            </Text>
+            <Text style={{ color: "#555555" }}>{formattedDate}</Text>
+          </View>
+          <Menu
+            style={{ width: 150, }}
+            visible={visible}
+            onRequestClose={hideMenu}
+            anchor={<TouchableOpacity onPress={showMenu}>
+              <Icon name="ellipsis-h" size={27} />
+            </TouchableOpacity>}
+          // style={{position: "absolute", bottom: 50, right: 50}}
+          >
+            <MenuItem textStyle={{fontSize: 15}} onPress={hideMenu}>
+            Save Post
+            </MenuItem>
+            <MenuDivider />
+            <MenuItem onPress={hideMenu} textStyle={{fontSize: 15,color: "red"}}>Delete Post</MenuItem>
+          </Menu>
         </View>
       </View>
       {element?.media_url && (
@@ -115,12 +168,7 @@ const Post = ({ element, postIds , setCommentPostId , id}) => {
 
       <View>
         <RenderFormattedText htmlContent={element?.content} />
-        {/* <Text>...Read More</Text> */}
       </View>
-
-      {/* <Text numberOfLines={2} ellipsizeMode="tail">
-        <RenderFormattedText htmlContent={content} />
-      </Text> */}
 
       <View style={styles.actionsContainer}>
         <View style={styles.leftActions}>
@@ -133,28 +181,32 @@ const Post = ({ element, postIds , setCommentPostId , id}) => {
                 if (isLikedPost) {
                   setIsLikedPost(false);
                   deleteLike(element?.post_id, userId);
+                  setNoOfLikes(noOfLikes - 1);
                 } else {
                   addToLikesTable();
                   setIsLikedPost(true);
+                  setNoOfLikes(noOfLikes + 1);
                 }
               }}
             />
-            <Text style={styles.actionText}>1</Text>
+            <Text style={styles.actionText}>{noOfLikes}</Text>
           </View>
 
           <View style={styles.actionGroup}>
-            <Icon name="comment-o" size={27} onPress={()=>{
-              setCommentPostId(id);
-            }}/>
-            <Text style={styles.actionText}>5</Text>
+            <Icon
+              name="comment-o"
+              size={27}
+              onPress={() => {
+                setCommentPostId(id);
+              }}
+            />
+            <Text style={styles.actionText}>{noOfComments}</Text>
           </View>
-
-          <Icon name="bookmark-o" size={27} style={styles.iconSpacing} />
         </View>
 
-        <Icon name="trash" size={27} color={"red"} />
+        {/* <Icon name="bookmark-o" size={27} style={styles.iconSpacing} /> */}
       </View>
-      {/* <CommentsSection ref={commentsSectionRef} element={element}/> */}
+
     </View>
   );
 };
@@ -168,16 +220,11 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#d7d8d8",
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.2,
-    // shadowRadius: 7,
-    // elevation: 2,
   },
   postImage: {
     borderRadius: 10,
     marginVertical: 10,
-    resizeMode: "contain", // Ensures the image fits within its bounds
+    resizeMode: "contain",
   },
   actionsContainer: {
     marginTop: 10,

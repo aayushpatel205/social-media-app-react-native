@@ -14,7 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as NavigationBar from "expo-navigation-bar";
 import InputField from "../components/InputField";
 import { useDispatch } from "react-redux";
-import { setSessionData , setProfileImgLink } from "../features/profileSlice";
+import { setSessionData, setProfileImgLink } from "../features/profileSlice";
 import { getPublicImageUrl } from "../ImageAddFunction";
 
 const LoginPage = ({ navigation }) => {
@@ -39,6 +39,20 @@ const LoginPage = ({ navigation }) => {
   useEffect(() => {
     NavigationBar.setBackgroundColorAsync("#FFFFFF");
   }, []);
+
+  async function checkFileExists(bucketName, fileName) {
+    const { data, error } = await supabase.storage
+      .from(bucketName)
+      .list("", { search: fileName });
+
+    if (error) {
+      console.error("Error listing files:", error);
+      return false;
+    }
+
+    const fileExists = data.some((file) => file.name === fileName);
+    return fileExists;
+  }
 
   const setFieldsToEmpty = () => {
     setEmail("");
@@ -68,15 +82,21 @@ const LoginPage = ({ navigation }) => {
         const { data: sessionData, error: sessionError } =
           await supabase.auth.getSession();
         await storeSession(sessionData.session);
-        const publicUrl = getPublicImageUrl("profile images", sessionData);
+        (async () => {
+          const bucketName = "profile images";
+          const fileName = `${sessionData?.session.user.id}.jpg`;
+
+          const exists = await checkFileExists(bucketName, fileName);
+          console.warn(exists ? "File exists!" : "File does not exist.");
+          dispatch(setProfileImgLink(exists ? getPublicImageUrl("profile images",sessionData) : null));
+        })();
+        // console.warn("The public url is: ", publicUrl);
         dispatch(setSessionData(sessionData));
-        dispatch(setProfileImgLink(publicUrl));
         console.warn("Session stored successfully !!");
         navigation.navigate("RenderPage");
       }
       setFieldsToEmpty();
     }
-    // setLoading(true);
   }
 
   return (

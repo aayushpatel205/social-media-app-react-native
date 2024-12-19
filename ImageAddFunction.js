@@ -7,7 +7,17 @@ import { useSelector, useDispatch } from "react-redux";
 import { setPostDetails, setProfileImgLink } from "./features/profileSlice";
 import uuid from "react-native-uuid";
 
-export const addToPostsTable = async (user_id, uploadedUrl, captionText,userDisplayName,profileImg) => {
+const updateProfileImg = async (sessionData) => {
+
+
+  if (error) {
+    console.error('Error updating profile image:', error);
+  } else {
+    console.log('Profile image updated successfully:', data);
+  }
+}
+
+export const addToPostsTable = async (user_id, uploadedUrl, captionText, userDisplayName, profileImg) => {
   const { data, error } = await supabase.from("posts").insert({
     media_url: uploadedUrl,
     user_id: user_id,
@@ -30,7 +40,7 @@ export const getPublicImageUrl = (storageName, sessionData, postId) => {
   const { data, error } = supabase.storage
     .from(storageName)
     .getPublicUrl(fileName);
-  console.log("The data url received: ", data?.publicUrl);
+  console.warn("The data url received: ", data?.publicUrl);
 
   if (error) {
     console.error("Error fetching public URL:", error);
@@ -104,7 +114,17 @@ export const addImage = async (
     );
     console.warn("uploaded Url", uploadedUrl);
     if (storageName === "profile images") {
-      dispatch(setPicture(uploadedUrl));
+      dispatch(setProfileImgLink(uploadedUrl));
+      const updateProfileImg = async()=>{
+        const { data, error } = await supabase
+        .from('posts')
+        .update({ profileImg: uploadedUrl })
+        .eq('id', sessionData?.session.user.id);
+        if(error){
+          console.warn("Couldn't update profile image in posts table!!");
+        }
+        updateProfileImg();
+      }
     } else {
       return uploadedUrl;
     }

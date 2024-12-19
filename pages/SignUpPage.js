@@ -11,11 +11,13 @@ import { landingPageStyles } from "./LandingPage";
 import { supabase } from "../lib/supabase";
 import * as NavigationBar from 'expo-navigation-bar';
 import InputField from "../components/InputField";
+import Toast from "react-native-toast-message";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [phoneNumber , setPhoneNumber] = useState("");
 
   const signUpFieldsArray = [
     {
@@ -36,6 +38,12 @@ const SignUpPage = ({ navigation }) => {
       setValue: setPassword,
       iconName: "lock"
     },
+    {
+      title: "Phone Number",
+      value: phoneNumber,
+      setValue: setPhoneNumber,
+      iconName: "phone"
+    },
   ]
 
   const setFunc = () => {
@@ -48,6 +56,7 @@ const SignUpPage = ({ navigation }) => {
     setEmail("");
     setPassword("");
     setUsername("");
+    setPhoneNumber("");
   };
 
   useEffect(()=>{
@@ -55,17 +64,27 @@ const SignUpPage = ({ navigation }) => {
   },[])
 
   async function signUpWithEmail() {
-    if (!email || !password || !username) {
-      Alert.alert("Please enter all your details!!");
+    if (!email || !password || !username || !phoneNumber) {
+      Toast.show({
+        type: "error",
+        text1: "Please fill all the fields",
+      })
     } else {
       setFunc();
       const { data: error } = await supabase.auth.signUp({
         email: email,
         password: password,
+        options: {
+          data:{
+            username: username,
+            phoneNumber: phoneNumber
+          }
+        }
       });
 
       if (error) {
-        Alert.alert(error.message);
+        console.warn("The error is: ",error)
+        Alert.alert("Not created");
       } else {
         Alert.alert("Account created !!");
         navigation.navigate("Login");
@@ -129,6 +148,7 @@ const SignUpPage = ({ navigation }) => {
           <Text style={{ fontWeight: "700", color: "#33BC54" }}>Login</Text>
         </Text>
       </View>
+      <Toast text1Style={{ fontSize: 17 }} />
     </View>
   );
 };

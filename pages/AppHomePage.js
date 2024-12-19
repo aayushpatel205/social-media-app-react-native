@@ -5,6 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   ActivityIndicator,
+  Button,
 } from "react-native";
 // import ScrollView from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -16,6 +17,7 @@ import Icon from "react-native-vector-icons/FontAwesome";
 import CustomNavigationTab from "../components/CustomNavigationTab";
 import Post from "../components/Post";
 import CommentsSection from "../components/CommentsSection";
+import Toast from "react-native-toast-message";
 
 const AppHomePage = ({ navigation }) => {
   const [dataReceived, setDataReceived] = useState([]);
@@ -24,6 +26,8 @@ const AppHomePage = ({ navigation }) => {
   const dispatch = useDispatch();
   const profileData = useSelector((state) => state?.profileReducer);
   const userId = profileData?.sessionData?.session.user.id;
+  const { email, username, phoneNumber } =
+    profileData?.sessionData?.session.user.user_metadata;
   const commentsSectionRef = useRef();
 
   useEffect(() => {
@@ -48,15 +52,29 @@ const AppHomePage = ({ navigation }) => {
   console.log("postIds:", postIds);
 
   const getData = async (id) => {
-    const { data, error } = await supabase
+    const { data, error } = await supabase.from("profiles").insert({
+      email: email,
+      userDisplayName: username,
+      userNumber: phoneNumber,
+      id: id
+    });
+
+    const { data: profileData, error: error2 } = await supabase
       .from("profiles")
       .select("*")
-      .eq("id", id)
-      .limit(1);
-    if (error) {
-      console.log("Error: ", error);
+      .eq("id", id);
+
+    if (error2) {
+      console.error("Error fetching profile data:", error2);
+    } else {
+      console.log("Fetched profile data:", profileData);
     }
-    dispatch(setUserDetails(data[0]));
+
+    if (profileData?.length > 0) {
+      dispatch(setUserDetails({ userDisplayName: profileData[0]?.userDisplayName, userBio: profileData[0]?.userBio, userNumber: profileData[0]?.userNumber, userAddress: profileData[0]?.userAddress }));
+    } else {
+      dispatch(setUserDetails({ userDisplayName: username, userBio: null, userNumber: phoneNumber, userAddress: null }));
+    }
   };
 
   const getData2 = async () => {
@@ -64,15 +82,16 @@ const AppHomePage = ({ navigation }) => {
       .from("posts")
       .select("*")
       .order("created_at", { ascending: false }); // Replace with the actual userId
-
-    console.log("The image urls of posts data is: ", data.length);
     setDataReceived(data);
 
-    if (error) {
-      console.error("Error fetching media_url:", error);
-    } else {
-      console.log("Fetched media_url:", data);
-    }
+  };
+
+  const showToast = () => {
+    Toast.show({
+      type: "success",
+      text1: "Hello",
+      text2: "This is some something 👋",
+    });
   };
 
   const restoreSession = async () => {
@@ -106,16 +125,18 @@ const AppHomePage = ({ navigation }) => {
   useEffect(() => {
     NavigationBar.setBackgroundColorAsync("#FFFFFF");
     restoreSession();
-    getData(23456);
+    getData(userId);
     getData2();
     getLikesTableData();
+    console.warn("The profile image is: ", profileData?.profileImg);
   }, []);
 
   return (
     <View style={styles.container}>
       <View
         style={{
-          paddingHorizontal: 20,
+          paddingLeft: 20,
+          paddingRight: 10,
           paddingBottom: 10,
           display: "flex",
           flexDirection: "row",
@@ -124,9 +145,10 @@ const AppHomePage = ({ navigation }) => {
         }}
       >
         <Text style={{ fontSize: 30, fontWeight: "bold" }}>LinkUp</Text>
-        <View style={{ display: "flex", flexDirection: "row", gap: 10 }}>
-          <Icon name="heart-o" size={28} color="#000" />
-          <Icon name="paper-plane-o" size={28} color="#000" />
+        <View style={{ display: "flex", flexDirection: "row", gap: 15 }}>
+          <Icon name="bookmark-o" size={30} color="#000" />
+          <Icon name="sign-out" size={30} color="#000" />
+          {/* <Icon name="paper-plane-o" size={28} color="#000" /> */}
         </View>
       </View>
       {dataReceived?.length > 0 ? (
@@ -138,6 +160,7 @@ const AppHomePage = ({ navigation }) => {
             return (
               <View>
                 <Post
+                  profileData={profileData}
                   element={element}
                   postIds={postIds}
                   id={id}
@@ -157,6 +180,7 @@ const AppHomePage = ({ navigation }) => {
         setCommentPostId={setCommentPostId}
         element={dataReceived[commentPostId]}
       />
+      <Toast />
     </View>
   );
 };
