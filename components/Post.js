@@ -99,9 +99,9 @@ const Post = ({ element, postIds, setCommentPostId, id }) => {
     getNoOfComments();
   }, []);
 
-  if (!element?.media_url || noOfLikes == null || noOfComments == null) {
-    return null; // Conditionally render nothing if requirements are not met
-  }
+  // if (!element?.media_url || !noOfLikes || !noOfComments) {
+  //   return null; // Conditionally render nothing if requirements are not met
+  // }
 
   return (
     <View style={styles.postContainer}>
