@@ -3,38 +3,24 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableWithoutFeedback,
   Alert,
   StatusBar,
 } from "react-native";
 import { landingPageStyles } from "./LandingPage";
 import { supabase } from "../lib/supabase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as NavigationBar from "expo-navigation-bar";
 import InputField from "../components/InputField";
 import { useDispatch } from "react-redux";
 import { setSessionData, setProfileImgLink } from "../features/profileSlice";
 import { getPublicImageUrl } from "../ImageAddFunction";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import PasswordField from "../components/PasswordField";
 
 const LoginPage = ({ navigation }) => {
   const dispatch = useDispatch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const loginFieldsArray = [
-    {
-      title: "Email",
-      value: email,
-      setValue: setEmail,
-      iconName: "envelope",
-    },
-    {
-      title: "Password",
-      value: password,
-      setValue: setPassword,
-      iconName: "lock",
-    },
-  ];
 
   useEffect(() => {
     NavigationBar.setBackgroundColorAsync("#FFFFFF");
@@ -59,14 +45,6 @@ const LoginPage = ({ navigation }) => {
     setPassword("");
   };
 
-  const storeSession = async (session) => {
-    try {
-      await AsyncStorage.setItem("userSession", JSON.stringify(session));
-    } catch (error) {
-      console.error("Error storing session:", error);
-    }
-  };
-
   async function signInWithEmail() {
     if (!email || !password) {
       Alert.alert("Please enter both email and password !");
@@ -81,18 +59,14 @@ const LoginPage = ({ navigation }) => {
       } else {
         const { data: sessionData, error: sessionError } =
           await supabase.auth.getSession();
-        await storeSession(sessionData.session);
         (async () => {
           const bucketName = "profile images";
           const fileName = `${sessionData?.session.user.id}.jpg`;
 
           const exists = await checkFileExists(bucketName, fileName);
-          console.warn(exists ? "File exists!" : "File does not exist.");
-          dispatch(setProfileImgLink(exists ? getPublicImageUrl("profile images",sessionData) : null));
+          dispatch(setProfileImgLink(exists ? getPublicImageUrl("profile images", sessionData) : null));
         })();
-        // console.warn("The public url is: ", publicUrl);
         dispatch(setSessionData(sessionData));
-        console.warn("Session stored successfully !!");
         navigation.navigate("RenderPage");
       }
       setFieldsToEmpty();
@@ -104,13 +78,10 @@ const LoginPage = ({ navigation }) => {
       <StatusBar backgroundColor="#fff" />
       <View style={loginPageStyles.buttonBox}>
         <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-          <Image
-            source={require("../assets/icons/left-arrow.png")}
-            style={{ height: 25, width: 25 }}
-          />
+          <MaterialCommunityIcons name="chevron-left" size={45} color="#000" />
         </TouchableWithoutFeedback>
       </View>
-      <View style={{ marginTop: 110 }}>
+      <View style={{ marginTop: 120 }}>
         <Text style={{ fontSize: 35, fontWeight: "bold", color: "#000" }}>
           Hey,
         </Text>
@@ -119,16 +90,23 @@ const LoginPage = ({ navigation }) => {
         </Text>
       </View>
 
-      {/* <Button title="click" onPress={() => setModalVisible(true)}/> */}
-
       <View style={{ width: "100%", display: "flex", gap: 15 }}>
         <Text style={{ fontSize: 16, marginBottom: 15 }}>
           Please login to continue
         </Text>
 
-        {loginFieldsArray.map((element, index) => {
-          return <InputField element={element} key={index} />;
-        })}
+        <InputField
+        title="Email"
+        value={email}
+        setValue={setEmail}
+        iconName={"envelope"}
+        />
+
+        {/* Password Field */}
+        <PasswordField
+          value={password}
+          setValue={setPassword}
+        />
         <Text
           style={{
             textAlign: "right",
@@ -175,7 +153,7 @@ export const loginPageStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     position: "absolute",
-    top: 20,
+    top: 50,
     left: 20,
   },
 });

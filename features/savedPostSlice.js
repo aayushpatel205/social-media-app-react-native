@@ -13,3 +13,6 @@ export const savedPostSlice = createSlice({
         },
     },
 });
+
+export const { setSavedPosts } = savedPostSlice.actions;
+export default savedPostSlice.reducer;

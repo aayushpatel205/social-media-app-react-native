@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import AppHomePage from "./AppHomePage";
 import { useSelector } from "react-redux";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 import ProfilePage from "./ProfilePage";
 import CreatePost from "./CreatePost";
 import CustomNavigationTab from "../components/CustomNavigationTab";

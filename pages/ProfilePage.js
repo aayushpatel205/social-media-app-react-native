@@ -1,44 +1,77 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   StyleSheet,
   Text,
   View,
-  TouchableWithoutFeedback,
   Image,
-  TouchableOpacity,
-  Button,
+  ScrollView,
+  ActivityIndicator
 } from "react-native";
-import { loginPageStyles } from "./LoginPage";
-import { useSelector, useDispatch } from "react-redux";
-import * as NavigationBar from "expo-navigation-bar";
-import FeatherIcon from "react-native-vector-icons/Feather";
+import { useSelector } from "react-redux";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { changeNavigation } from "../features/navigationSlice";
+import Post from "../components/Post";
+import { supabase } from "../lib/supabase";
+import CommentsSection from "../components/CommentsSection";
 
-const ProfilePage = ({ navigation }) => {
-  //sessionData?.session.user.id
-  const dispatch = useDispatch();
+const ProfilePage = () => {
   const profileData = useSelector((state) => state?.profileReducer);
   const userId = profileData?.sessionData?.session.user.id;
-  // const imgPath = profileData?.profileImg
-  //   ? {
-  //       uri: profileData?.profileImg,
-  //     }
-  //   : require("../assets/icons/user.png");
+  const [userPosts, setUserPosts] = useState([]);
+  const [likesTableData, setLikesTableData] = useState([]);
+  const [commentPostId, setCommentPostId] = useState(null);
+  const [isFetching, setIsFetching] = useState(true); // Added loading state
+  const commentsSectionRef = useRef();
+
+  const getUserPosts = async () => {
+    setIsFetching(true); // Set fetching to true before the API call
+    const { data, error } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching user posts:", error);
+    } else {
+      setUserPosts(data);
+    }
+    setIsFetching(false); // Set fetching to false after the API call is complete
+  };
+
+  const getLikesTableData = async () => {
+    const { data, error } = await supabase
+      .from("likes")
+      .select("post_id")
+      .eq("user_id", userId);
+
+    if (error) {
+      console.log("Error occured while getting likes table data: ", error);
+    }
+    setLikesTableData(data);
+  };
+
+  const postIds = likesTableData?.map((item) => item.post_id);
 
   useEffect(() => {
-    console.warn(profileData?.profileImg);
-  })
+    getUserPosts();
+    getLikesTableData();
+  }, []);
+
+  useEffect(() => {
+    if (commentPostId != null) {
+      commentsSectionRef.current.show();
+    }
+  }, [commentPostId]);
 
   return (
-    <View
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{ paddingBottom: 30 }}
       style={{
-        flex: 1,
         backgroundColor: "#fff",
-        flexDirection: "column",
-        display: "flex",
-        paddingVertical: 10,
+        marginBottom: 60,
+        paddingTop: 40
       }}
     >
       <View
@@ -48,18 +81,9 @@ const ProfilePage = ({ navigation }) => {
           justifyContent: "center",
         }}
       >
-        <View style={loginPageStyles.buttonBox}>
-          <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-            <FeatherIcon name="chevron-left" size={38} />
-            {/* <Image
-              source={require("../assets/icons/left-arrow.png")}
-              style={{ height: 25, width: 25 }}
-            /> */}
-          </TouchableWithoutFeedback>
-        </View>
         <Text
           style={{
-            fontSize: 28,
+            fontSize: 32,
             fontWeight: 700,
             color: "#000",
             paddingTop: 20,
@@ -67,43 +91,12 @@ const ProfilePage = ({ navigation }) => {
         >
           Profile
         </Text>
-
-        <View
-          style={{
-            position: "absolute",
-            right: 20,
-            top: 17,
-            backgroundColor: "#d3d3d3",
-            height: 45,
-            width: 45,
-            justifyContent: "center",
-            alignItems: "center",
-            borderRadius: 12,
-          }}
-        >
-          <TouchableOpacity>
-            <FontAwesomeIcon
-              name="sign-out"
-              size={30}
-              style={{ marginLeft: 6 }}
-            />
-
-            {/* <Image
-              source={require("../assets/icons/power-button.png")}
-              style={{
-                height: 32,
-                width: 30,
-              }}
-            /> */}
-          </TouchableOpacity>
-        </View>
       </View>
       <View style={profilePageStyles.profileBox}>
         {profileData.profileImg ? (
           <Image
             source={{ uri: profileData?.profileImg }}
             resizeMode="cover"
-            // source={{ uri: data?.profileImg }}
             style={{ height: 100, width: 100, borderRadius: 50 }}
           />
         ) : (
@@ -129,41 +122,8 @@ const ProfilePage = ({ navigation }) => {
           fontWeight: 700,
         }}
       >
-        {profileData?.userAddress}
+        {profileData.userAddress ? profileData.userAddress : "No Address Set"}
       </Text>
-
-      {/* <TouchableOpacity
-        onPress={() => {
-          dispatch(changeNavigation("EditProfile"));
-        }}
-      >
-        <View
-          style={{
-            width: "35%",
-            alignSelf: "center",
-            height: 32,
-            marginTop: 15,
-            borderRadius: 7,
-            backgroundColor: "#33bc54",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <Text style={{ fontSize: 16, fontWeight: 600, color: "#fff" }}>
-            Edit Profile
-          </Text>
-        </View>
-      </TouchableOpacity> */}
-
-      {/* <View
-        style={{
-          width: "50%",
-          marginVertical: 10,
-          alignSelf: "center",
-          height: 25,
-        }}
-      ></View> */}
 
       <View style={{ padding: 20 }}>
         <View
@@ -175,8 +135,8 @@ const ProfilePage = ({ navigation }) => {
             marginVertical: 12,
           }}
         >
-          <FontAwesomeIcon name="envelope" size={27} color="#9e9e9e" />
-          <Text style={{ fontSize: 17, color: "#9e9e9e", fontWeight: "600" }}>
+          <FontAwesomeIcon name="envelope" size={27} color="#999" />
+          <Text style={{ fontSize: 18, color: "#999", fontWeight: 600 }}>
             {profileData?.sessionData?.session.user.email}
           </Text>
         </View>
@@ -190,27 +150,64 @@ const ProfilePage = ({ navigation }) => {
             marginBottom: 12,
           }}
         >
-          <FontAwesomeIcon name="phone" size={27} color="#9e9e9e" />
-          <Text style={{ fontSize: 17, color: "#9e9e9e", fontWeight: "600" }}>
+          <FontAwesomeIcon name="phone" size={27} color="#999" />
+          <Text style={{ fontSize: 18, color: "#999", fontWeight: 600 }}>
             {profileData?.userNumber}
           </Text>
         </View>
 
-        <View
-          style={{
-            display: "flex",
-            gap: 10,
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        >
-          <FontAwesomeIcon name="user" size={27} color="#9e9e9e" />
-          <Text style={{ fontSize: 17, color: "#9e9e9e", fontWeight: "600" }}>
-            {profileData?.userBio}
-          </Text>
-        </View>
+        {
+          profileData.userBio && (
+            <View
+              style={{
+                display: "flex",
+                gap: 10,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <FontAwesomeIcon name="user" size={27} color="#9e9e9e" />
+              <Text style={{ fontSize: 18, color: "#9e9e9e", fontWeight: 600 }}>
+                {profileData.userBio}
+              </Text>
+            </View>
+          )
+        }
       </View>
-    </View>
+
+      <Text style={{ paddingHorizontal: 20, fontSize: 28, fontWeight: "bold", marginVertical: 10 }}>
+        Your Posts
+      </Text>
+
+      {isFetching ? (
+        <ActivityIndicator size="large" color="#0000ff" />
+      ) : userPosts.length > 0 ? (
+        userPosts.map((element, id) => {
+          console.warn(element);
+          return (
+            <View key={id}>
+              <Post
+                profileData={profileData}
+                element={element}
+                postIds={postIds}
+                id={id}
+                setCommentPostId={setCommentPostId}
+                dataReceived={userPosts}
+                setDataReceived={setUserPosts}
+              />
+            </View>
+          );
+        })
+      ) : (
+        <Text style={{ fontSize: 22, color: '#999', padding: 20 }}>You dont have any posts.</Text>
+      )}
+
+      <CommentsSection
+        ref={commentsSectionRef}
+        setCommentPostId={setCommentPostId}
+        element={userPosts[commentPostId]}
+      />
+    </ScrollView>
   );
 };
 

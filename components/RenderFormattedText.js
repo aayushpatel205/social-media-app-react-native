@@ -4,6 +4,12 @@ import { useWindowDimensions, View, Text } from "react-native";
 
 const RenderFormattedText = ({ htmlContent}) => {
   const contentWidth = useWindowDimensions().width - 60;
+  const tagsStyles = React.useMemo(
+    () => ({
+      div: { maxWidth: contentWidth, fontSize: 17 },
+    }),
+    [contentWidth]
+  );
 
   return (
     <View>
@@ -16,10 +22,8 @@ const RenderFormattedText = ({ htmlContent}) => {
       >
         <RenderHTML
           contentWidth={contentWidth}
-          source={{ html: htmlContent }}
-          tagsStyles={{
-            div: { maxWidth: contentWidth, fontSize: 17 },
-          }}
+          source={{ html: htmlContent ? htmlContent : "" }}
+          tagsStyles={tagsStyles}
         />
       </View>
     </View>

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity, Alert } from "react-native";
 import RenderFormattedText from "./RenderFormattedText";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { supabase } from "../lib/supabase";
 import { Menu, MenuItem, MenuDivider } from 'react-native-material-menu';
+import { setSavedPosts } from "../features/savedPostSlice";
+import Toast from "react-native-toast-message";
 
 const formatTimestampToMonthDay = (timestamp) => {
   const date = new Date(timestamp);
@@ -12,7 +14,7 @@ const formatTimestampToMonthDay = (timestamp) => {
   return date.toLocaleDateString("en-US", options);
 };
 
-const Post = ({ element, postIds, setCommentPostId, id }) => {
+const Post = ({ element, postIds, setCommentPostId, id, dataReceived, setDataReceived, savedPostsIds, currentRoute }) => {
   const [imageDimensions, setImageDimensions] = useState({
     width: 0,
     height: 0,
@@ -24,9 +26,78 @@ const Post = ({ element, postIds, setCommentPostId, id }) => {
   const userId = profileData?.sessionData?.session?.user?.id;
   const formattedDate = formatTimestampToMonthDay(element?.created_at);
   const [visible, setVisible] = useState(false);
+  const [isSavedPost, setIsSavedPost] = useState(false);
+  const dispatch = useDispatch();
 
-  const hideMenu = () => setVisible(false);
-  const showMenu = () => setVisible(true);
+
+  const deleteFromSavedPostsTable = async (post_id, user_id) => {
+    const { data, error } = await supabase
+      .from("saved-posts")
+      .delete()
+      .match({ post_id: post_id, user_id: user_id });
+
+    if (error) {
+      console.error("Error deleting row:", error);
+    }
+  }
+  const addToSavedPostsTable = async () => {
+    const savedPostData = {
+      content: element?.content,
+      media_url: element?.media_url,
+      post_id: element?.post_id,
+      user_id: userId,
+      profileImg: element?.profileImg,
+      userDisplayName: element?.userDisplayName
+    }
+    const { data: postData, error: fetchError } = await supabase
+      .from('saved-posts')
+      .insert([savedPostData]);
+
+    if (fetchError) {
+      Toast.show({
+        type: "error",
+        text1: fetchError.message,
+      })
+    } else {
+      Alert.alert("Post saved successfully !!");
+    }
+  }
+  const deletePostAndImage = async () => {
+    try {
+      // Step 1: Delete the post from the 'posts' table
+      const { data, error: postError } = await supabase
+        .from('posts')
+        .delete()
+        .eq('post_id', element?.post_id);
+
+      if (postError) {
+        console.error('Error deleting post:', postError);
+        return; // Exit if post deletion fails
+      } else {
+        console.warn("Post is deleted successfully !!");
+      }
+
+      // Step 2: Delete the image from the 'posts-images' bucket
+      const imageName = element.media_url.split('/').pop().split('?')[0];
+      console.log("ImageName is: ", imageName);
+      const { error: imageError } = await supabase
+        .storage
+        .from('posts-images')
+        .remove([imageName]);
+
+      if (imageError) {
+        console.error('Error deleting image:', imageError.message);
+      } else {
+        console.log('Image deleted successfully');
+      }
+    } catch (err) {
+      Toast.show({
+        type: "error",
+        text1: "Unexpected error occured",
+      })
+    }
+  }
+
 
   const getNoOfLikes = async () => {
     const { data, error } = await supabase
@@ -95,6 +166,10 @@ const Post = ({ element, postIds, setCommentPostId, id }) => {
   }, [postIds, element.post_id]);
 
   useEffect(() => {
+    setIsSavedPost(savedPostsIds?.includes(element.post_id));
+  }, [savedPostsIds, element.post_id]);
+
+  useEffect(() => {
     getNoOfLikes();
     getNoOfComments();
   }, []);
@@ -104,110 +179,172 @@ const Post = ({ element, postIds, setCommentPostId, id }) => {
   // }
 
   return (
-    <View style={styles.postContainer}>
-      <View
-        style={{
-          marginBottom: 8,
-          marginTop: 5,
-          marginHorizontal: 5,
-          display: "flex",
-          flexDirection: "row",
-          gap: 10,
-          alignItems: "center",
-        }}
-      >
-        {element.user_id === userId ? (
+    <>
+      <View style={styles.postContainer}>
+        <View
+          style={{
+            marginBottom: 8,
+            marginTop: 5,
+            marginHorizontal: 5,
+            display: "flex",
+            flexDirection: "row",
+            gap: 13,
+            alignItems: "center",
+          }}
+        >
+          {element.user_id === userId ? (
+            profileData.profileImg != "NULL" ? (
+              <Icon name="user" size={35} color="#666" />
+            ) : (
+              <Image
+                source={{ uri: profileData?.profileImg }}
+                style={{ width: 40, height: 40, borderRadius: 24 }}
+              />
+            )
+
+          ) : element?.profileImg != "NULL" ? (
+            <Image
+              source={{ uri: element.profileImg }}
+              style={{ width: 40, height: 40, borderRadius: 20 }}
+            />
+          ) : (
+            <Icon name="user" size={35} color="#666" />
+          )}
+
+          <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "85%" }}>
+            <View>
+              <Text style={{ fontSize: 16, color: "#555555" }}>
+                {element.userDisplayName != "NULL"
+                  ? element.userDisplayName
+                  : "Anonymous"}
+              </Text>
+              <Text style={{ color: "#555555" }}>{formattedDate}</Text>
+            </View>
+            {currentRoute === "SavedPosts" ? null : (
+              element?.user_id === userId ? (
+                <Menu
+                  style={{ width: 150 }}
+                  visible={visible}
+                  onRequestClose={() => setVisible(false)}
+                  anchor={
+                    <TouchableOpacity onPress={() => setVisible(true)}>
+                      <Icon name="ellipsis-h" size={27} />
+                    </TouchableOpacity>
+                  }
+                >
+                  <MenuItem
+                    textStyle={{ fontSize: 16, color: "red" }}
+                    onPress={async () => {
+                      await deletePostAndImage();
+                      setDataReceived(dataReceived.filter((item) => item.post_id !== element.post_id));
+                      setVisible(false);
+                      Toast.show({
+                        type: "success",
+                        text1: "Post Deleted",
+                      });
+                    }}
+                  >
+                    Delete Post
+                  </MenuItem>
+                </Menu>
+              ) : null
+            )}
+
+          </View>
+        </View>
+        {element?.media_url && (
           <Image
-            source={{ uri: profileData?.profileImg }}
-            style={{ width: 40, height: 40, borderRadius: 20 }}
+            source={{ uri: element?.media_url }}
+            style={[
+              styles.postImage,
+              { width: imageDimensions.width, height: imageDimensions.height },
+            ]}
           />
-        ) : element?.profileImg ? (
-          <Image
-            source={{ uri: element.profileImg }}
-            style={{ width: 40, height: 40, borderRadius: 20 }}
-          />
-        ) : (
-          <Icon name="user" size={32} color="#000" />
         )}
 
-        <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", width: "85%" }}>
-          <View>
-            <Text style={{ fontSize: 16, color: "#555555" }}>
-              {element.userDisplayName != "NULL"
-                ? element.userDisplayName
-                : "Anonymous"}
-            </Text>
-            <Text style={{ color: "#555555" }}>{formattedDate}</Text>
-          </View>
-          <Menu
-            style={{ width: 150, }}
-            visible={visible}
-            onRequestClose={hideMenu}
-            anchor={<TouchableOpacity onPress={showMenu}>
-              <Icon name="ellipsis-h" size={27} />
-            </TouchableOpacity>}
-          // style={{position: "absolute", bottom: 50, right: 50}}
-          >
-            <MenuItem textStyle={{fontSize: 15}} onPress={hideMenu}>
-            Save Post
-            </MenuItem>
-            <MenuDivider />
-            <MenuItem onPress={hideMenu} textStyle={{fontSize: 15,color: "red"}}>Delete Post</MenuItem>
-          </Menu>
-        </View>
-      </View>
-      {element?.media_url && (
-        <Image
-          source={{ uri: element?.media_url }}
-          style={[
-            styles.postImage,
-            { width: imageDimensions.width, height: imageDimensions.height },
-          ]}
-        />
-      )}
-
-      <View>
-        <RenderFormattedText htmlContent={element?.content} />
-      </View>
-
-      <View style={styles.actionsContainer}>
-        <View style={styles.leftActions}>
-          <View style={styles.actionGroup}>
-            <Icon
-              name={`${isLikedPost ? "heart" : "heart-o"}`}
-              size={27}
-              color={`${isLikedPost ? "red" : "#000"}`}
-              onPress={() => {
-                if (isLikedPost) {
-                  setIsLikedPost(false);
-                  deleteLike(element?.post_id, userId);
-                  setNoOfLikes(noOfLikes - 1);
-                } else {
-                  addToLikesTable();
-                  setIsLikedPost(true);
-                  setNoOfLikes(noOfLikes + 1);
-                }
-              }}
-            />
-            <Text style={styles.actionText}>{noOfLikes}</Text>
-          </View>
-
-          <View style={styles.actionGroup}>
-            <Icon
-              name="comment-o"
-              size={27}
-              onPress={() => {
-                setCommentPostId(id);
-              }}
-            />
-            <Text style={styles.actionText}>{noOfComments}</Text>
-          </View>
+        <View>
+          <RenderFormattedText htmlContent={element?.content} />
         </View>
 
-        {/* <Icon name="bookmark-o" size={27} style={styles.iconSpacing} /> */}
-      </View>
+        <View style={styles.actionsContainer}>
+          <View style={styles.leftActions}>
+            <View style={styles.actionGroup}>
+              <Icon
+                name={`${isLikedPost ? "heart" : "heart-o"}`}
+                size={27}
+                color={`${isLikedPost ? "red" : "#000"}`}
+                onPress={() => {
+                  if (isLikedPost) {
+                    setIsLikedPost(false);
+                    deleteLike(element?.post_id, userId);
+                    setNoOfLikes(noOfLikes - 1);
+                  } else {
+                    addToLikesTable();
+                    setIsLikedPost(true);
+                    setNoOfLikes(noOfLikes + 1);
+                  }
+                }}
+              />
+              <Text style={styles.actionText}>{noOfLikes}</Text>
+            </View>
 
-    </View>
+            <View style={styles.actionGroup}>
+              <Icon
+                name="comment-o"
+                size={27}
+                onPress={() => {
+                  setCommentPostId(id);
+                }}
+              />
+              <Text style={styles.actionText}>{noOfComments}</Text>
+            </View>
+          </View>
+
+
+          {
+            currentRoute === "SavedPosts" ? (
+              <Icon
+                name={`${isSavedPost ? "bookmark" : "bookmark-o"}`}
+                color={"#383838"}
+                size={27}
+                style={styles.iconSpacing}
+                onPress={() => {
+                  if (isSavedPost) {
+                    setIsSavedPost(false);
+                    deleteFromSavedPostsTable(element?.post_id, userId);
+                  } else {
+                    setIsSavedPost(true);
+                    addToSavedPostsTable();
+                  }
+                }}
+              />
+            ) : (
+              element?.user_id !== userId && (
+                <Icon
+                  name={`${isSavedPost ? "bookmark" : "bookmark-o"}`}
+                  color={"#383838"}
+                  size={27}
+                  style={styles.iconSpacing}
+                  onPress={() => {
+                    if (isSavedPost) {
+                      setIsSavedPost(false);
+                      deleteFromSavedPostsTable(element?.post_id, userId);
+                    } else {
+                      setIsSavedPost(true);
+                      addToSavedPostsTable();
+                    }
+                  }}
+                />
+              )
+            )
+          }
+
+
+        </View>
+
+      </View>
+      {/* <Toast text1Style={{ fontSize: 17 }} /> */}
+    </>
   );
 };
 
@@ -237,6 +374,7 @@ const styles = StyleSheet.create({
   leftActions: {
     display: "flex",
     flexDirection: "row",
+    justifyContent: 'space-between',
     gap: 10,
   },
   actionGroup: {

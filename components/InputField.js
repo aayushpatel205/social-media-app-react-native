@@ -3,17 +3,15 @@ import { View , TextInput, StyleSheet } from "react-native";
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 
-const InputField = ({element}) => {
-  const value = element.value;
-  const setValue = element.setValue;
+const InputField = ({value , setValue , title , iconName }) => {
 
   return (
       <View style={[inputBoxStyles.inputBox , {borderColor: value ? "#33bc54" : "#d3d3d3",borderWidth: 2}]}>
-          <Icon name={element.iconName} size={26} color="#5a5a5a" style={{marginRight: 7}}/>
+          <Icon name={iconName} size={26} color="#5a5a5a" style={{marginRight: 7}}/>
           <TextInput
             value={value}
             onChangeText={(text) => setValue(text)}
-            placeholder={`Enter your ${element.title}...`}
+            placeholder={`Enter your ${title}...`}
             style={{
               height: "100%",
               width: "85%",

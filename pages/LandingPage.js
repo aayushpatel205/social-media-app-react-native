@@ -59,10 +59,6 @@ const LandingPage = ({ navigation }) => {
           >
             Already have an account?{" "}
             <Text style={{ fontWeight: "700", color: "#33BC54" }}>Login </Text>
-            <Text onPress={()=>{navigation.navigate("Profile")}}>Profile Page </Text>
-            <Text onPress={()=>{navigation.navigate("Edit Profile")}}>Edit Profile Page</Text>
-            <Text onPress={()=>{navigation.navigate("Create Post")}}>Create Post</Text>
-            <Text onPress={()=>{navigation.navigate("NewPage")}}>App Home Page</Text>
           </Text>
         </View>
       </View>

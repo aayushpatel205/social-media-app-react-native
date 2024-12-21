@@ -12,39 +12,14 @@ import { supabase } from "../lib/supabase";
 import * as NavigationBar from 'expo-navigation-bar';
 import InputField from "../components/InputField";
 import Toast from "react-native-toast-message";
+import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
+import PasswordField from "../components/PasswordField";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
-  const [phoneNumber , setPhoneNumber] = useState("");
-
-  const signUpFieldsArray = [
-    {
-      title: "Username",
-      value: username,
-      setValue: setUsername,
-      iconName: "user"
-    },
-    {
-      title: "Email",
-      value: email,
-      setValue: setEmail,
-      iconName: "envelope"
-    },
-    {
-      title: "Password",
-      value: password,
-      setValue: setPassword,
-      iconName: "lock"
-    },
-    {
-      title: "Phone Number",
-      value: phoneNumber,
-      setValue: setPhoneNumber,
-      iconName: "phone"
-    },
-  ]
+  const [phoneNumber, setPhoneNumber] = useState("");
 
   const setFunc = () => {
     setEmail(email.trim());
@@ -59,9 +34,9 @@ const SignUpPage = ({ navigation }) => {
     setPhoneNumber("");
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     NavigationBar.setBackgroundColorAsync('#FFFFFF');
-  },[])
+  }, [])
 
   async function signUpWithEmail() {
     if (!email || !password || !username || !phoneNumber) {
@@ -71,11 +46,11 @@ const SignUpPage = ({ navigation }) => {
       })
     } else {
       setFunc();
-      const { data: error } = await supabase.auth.signUp({
+      const { data , error } = await supabase.auth.signUp({
         email: email,
         password: password,
         options: {
-          data:{
+          data: {
             username: username,
             phoneNumber: phoneNumber
           }
@@ -83,20 +58,13 @@ const SignUpPage = ({ navigation }) => {
       });
 
       if (error) {
-        console.warn("The error is: ",error)
         Alert.alert("Not created");
       } else {
         Alert.alert("Account created !!");
         navigation.navigate("Login");
       }
       setFieldsToEmpty();
-
-      // if (!session)
-      //   Alert.alert("Please check your inbox for email verification!");
     }
-    // setLoading(true)
-
-    // setLoading(false)
   }
 
   const [passwordIsVisible, setPasswordIsVisible] = useState(false);
@@ -107,10 +75,7 @@ const SignUpPage = ({ navigation }) => {
     <View style={loginPageStyles.container}>
       <View style={loginPageStyles.buttonBox}>
         <TouchableWithoutFeedback onPress={() => navigation.goBack()}>
-          <Image
-            source={require("../assets/icons/left-arrow.png")}
-            style={{ height: 25, width: 25 }}
-          />
+          <MaterialCommunityIcons name="chevron-left" size={45} color="#000" />
         </TouchableWithoutFeedback>
       </View>
       <View style={{ marginTop: 100 }}>
@@ -127,11 +92,49 @@ const SignUpPage = ({ navigation }) => {
           Please sign up to continue
         </Text>
 
-        {
-          signUpFieldsArray.map((element,index) => {
-            return <InputField element={element} key={index}/>
-          })
-        }
+
+        <InputField
+          title="Username"
+          value={username}
+          setValue={setUsername}
+          iconName="user"
+        // element={{
+        //   title: "username",
+        //   value: username,
+        //   setValue: setUsername,
+        //   iconName: "user",
+        // }}
+        />
+        <InputField
+          title='email'
+          value={email}
+          setValue={setEmail}
+          iconName="envelope"
+        // element={{
+        //   title: "Email",
+        //   value: email,
+        //   setValue: setEmail,
+        //   iconName: "envelope",
+        // }}
+        />
+
+        {/* Password Field */}
+        <PasswordField
+          value={password}
+          setValue={setPassword}
+        />
+
+        <InputField
+          title="phone number"
+          value={phoneNumber}
+          setValue={(value) => {
+            // Allow only digits and limit the length to 10 characters
+            if (/^\d{0,10}$/.test(value)) {
+              setPhoneNumber(value);
+            }
+          }}
+          iconName="phone"
+        />
         <TouchableWithoutFeedback onPress={() => signUpWithEmail()}>
           <View style={[landingPageStyles.button]}>
             <Text style={landingPageStyles.btnText}>Sign Up</Text>

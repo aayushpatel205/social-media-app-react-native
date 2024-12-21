@@ -9,11 +9,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   _Image,
-  KeyboardAvoidingView,
   ScrollView,
   Keyboard,
 } from "react-native";
-import { loginPageStyles } from "./LoginPage";
 import { profilePageStyles } from "./ProfilePage";
 import InputField from "../components/InputField";
 import { supabase } from "../lib/supabase";
@@ -25,7 +23,7 @@ import { setProfileImgLink } from "../features/profileSlice";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome";
 
-const EditProfilePage = ({ navigation }) => {
+const EditProfilePage = () => {
   const sessionData = useSelector((state) => state.profileReducer?.sessionData);
   const data = useSelector((state) => state.profileReducer);
   const dispatch = useDispatch();
@@ -45,7 +43,7 @@ const EditProfilePage = ({ navigation }) => {
       setKeyboardVisible(false);
     });
     console.log("data: ", data?.userBio);
-    console.log("data 2: ",data?.userAddress)
+    console.log("data 2: ", data?.userAddress)
 
     return () => {
       showSubscription.remove();
@@ -53,39 +51,6 @@ const EditProfilePage = ({ navigation }) => {
     };
   }, []);
 
-  // Function to pick an image and upload it as ArrayBuffer
-  // Function to pick an image, compress it, and upload it as ArrayBuffer
-
-  // Function to pick an image, compress it, and upload it as ArrayBuffer
-  //
-  // addImage();
-
-  const titleArray = [
-    {
-      title: "Display Name",
-      value: userDisplayName,
-      setValue: setUserDisplayName,
-      iconName: "user",
-    },
-    {
-      title: "Number",
-      value: userNumber,
-      setValue: setUserNumber,
-      iconName: "phone",
-    },
-    {
-      title: "Bio",
-      value: userBio,
-      setValue: setUserBio,
-      iconName: "id-card",
-    },
-    {
-      title: "Address",
-      value: userAddress,
-      setValue: setUserAddress,
-      iconName: "map-marker",
-    },
-  ];
   return (
     <>
       <ScrollView
@@ -95,6 +60,7 @@ const EditProfilePage = ({ navigation }) => {
           flexDirection: "column",
           display: "flex",
           paddingBottom: 100,
+          paddingTop: 30
         }}
       >
         <Text
@@ -135,7 +101,6 @@ const EditProfilePage = ({ navigation }) => {
                 source={require("../assets/icons/pen.png")}
                 style={{ height: 27, width: 27 }}
               />
-              {/* <Icon name="trash" size={30} color={"red"}/> */}
             </View>
           </TouchableWithoutFeedback>
         </View>
@@ -176,20 +141,7 @@ const EditProfilePage = ({ navigation }) => {
           }}
         >
           <View
-            style={{
-              alignSelf: "center",
-              backgroundColor: "#ff4f4b",
-              padding: 10,
-              borderRadius: 10,
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              height: 40,
-              borderColor: "#000",
-              width: "100%",
-
-            }}
+            style={editProfilePageStyles.removeButton}
           >
             <Text style={{ color: "#fff", fontSize: 15, fontWeight: 600 }}>
               Remove Profile Picture
@@ -210,14 +162,24 @@ const EditProfilePage = ({ navigation }) => {
                 marginTop: 25,
               }}
             >
-              {titleArray?.map((element, key) => {
-                return <InputField element={element} key={key} />;
-              })}
+              <InputField title="username" value={userDisplayName} setValue={setUserDisplayName} iconName="user" />
+              <InputField
+                title="phone number"
+                value={userNumber}
+                setValue={(value) => {
+                  // Allow only digits and limit the length to 10 characters
+                  if (/^\d{0,10}$/.test(value)) {
+                    setUserNumber(value);
+                  }
+                }}
+                iconName="phone"
+              />
+              <InputField title="bio" value={userBio} setValue={setUserBio} iconName="id-card" />
+              <InputField title="address" value={userAddress} setValue={setUserAddress} iconName="map-marker" />
             </View>
 
             <TouchableOpacity
               style={{ paddingHorizontal: 20 }}
-              // style={editProfilePageStyles.button}
               onPress={async () => {
                 const email = sessionData?.session.user.email;
                 const { data, error } = await supabase
@@ -275,6 +237,19 @@ export const editProfilePageStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  removeButton: {
+    alignSelf: "center",
+    backgroundColor: "#ff4f4b",
+    padding: 10,
+    borderRadius: 10,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    height: 40,
+    borderColor: "#000",
+    width: "100%",
+  }
 });
 
 export default EditProfilePage;

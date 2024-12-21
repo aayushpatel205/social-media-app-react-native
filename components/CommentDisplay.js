@@ -27,13 +27,17 @@ const CommentDisplay = ({ element }) => {
         }}
       >
         {element.user_id === userId ? (
+          profileData.profileImg != "NULL" ? (
+            <Icon name="user" size={34} color="#666" />
+          ) : (
+            <Image
+              source={{ uri: profileData?.profileImg }}
+              style={{ width: 40, height: 40, borderRadius: 24 }}
+            />
+          )
+        ) : element.profileImg ? (
           <Image
-            source={{ uri: profileData?.profileImg }}
-            style={{ width: 40, height: 40, borderRadius: 24 }}
-          />
-        ) : element?.profileImg ? (
-          <Image
-            source={{ uri: element.profileImg }}
+            source={{ uri: element?.profileImg }}
             style={{ width: 40, height: 40, borderRadius: 20 }}
           />
         ) : (

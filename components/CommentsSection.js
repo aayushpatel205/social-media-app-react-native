@@ -66,7 +66,7 @@ const CommentsSection = forwardRef((props, ref) => {
       }}
     >
       <KeyboardAvoidingView
-        style={{ height: 700 }}
+        style={{ height: 600 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={160}
       >
