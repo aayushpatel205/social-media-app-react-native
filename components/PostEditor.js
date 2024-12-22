@@ -6,6 +6,7 @@ import {
   View,
   TouchableWithoutFeedback,
   Image,
+  Alert,
 } from "react-native";
 import {
   actions,
@@ -17,6 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 import { addImage, addToPostsTable } from "../ImageAddFunction";
 import { useSelector, useDispatch } from "react-redux";
 import Toast from "react-native-toast-message";
+import { changeNavigation } from "../features/navigationSlice";
 
 const PostEditor = () => {
   const dispatch = useDispatch();
@@ -28,7 +30,6 @@ const PostEditor = () => {
   const user_id = sessionData?.session.user.id;
   const [captionText, setCaptionText] = useState();
   const [postUrl, setPostUrl] = useState();
-  const [editorIsDiabled, setEditorIsDisabled] = useState(false);
 
   const uploadPostImage = async () => {
     const urlToUpload = await addImage(
@@ -46,16 +47,6 @@ const PostEditor = () => {
       profileImg
     );
   };
-
-  // const richTextHandle = (descriptionText) => {
-  //   if (descriptionText) {
-  //     setShowDescError(false);
-  //     setDescHTML(descriptionText);
-  //   } else {
-  //     setShowDescError(true);
-  //     setDescHTML("");
-  //   }
-  // };
 
   const submitContentHandle = () => {
     const replaceHTML = descHTML.replace(/<(.|\n)*?>/g, "").trim();
@@ -80,155 +71,112 @@ const PostEditor = () => {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        <View
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            height: 250,
-            borderColor: "#b9e6c1",
-            borderWidth: 2,
-            width: "100%",
-            marginBottom: 20,
-            borderRadius: 15,
-          }}
-        >
-          {postUrl ? (
-            <Image
-              source={{ uri: postUrl }}
-              style={{ height: "100%", width: "100%", borderRadius: 16 }}
-            />
-          ) : (
-            <Text style={{ color: "#d3d3d3", fontSize: 25 }}>
-              Upload a post image
-            </Text>
-          )}
-          {postUrl && (
+    <>
+      <SafeAreaView style={{ flex: 1 }}>
+        <View style={styles.container}>
+          <View
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: 250,
+              borderColor: "#b9e6c1",
+              borderWidth: 2,
+              width: "100%",
+              marginBottom: 20,
+              borderRadius: 15,
+            }}
+          >
+            {postUrl ? (
+              <Image
+                source={{ uri: postUrl }}
+                style={{ height: "100%", width: "100%", borderRadius: 16 }}
+              />
+            ) : (
+              <Text style={{ color: "#d3d3d3", fontSize: 25 }}>
+                Upload a post image
+              </Text>
+            )}
+            {postUrl && (
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  setPostUrl("");
+                }}
+              >
+                <View
+                  style={{ position: "absolute", top: 10, right: 55, zIndex: 10 }}
+                >
+                  <Image
+                    source={require("../assets/icons/bin.png")}
+                    style={{ height: 35, width: 35 }}
+                  />
+                </View>
+              </TouchableWithoutFeedback>
+            )}
             <TouchableWithoutFeedback
-              onPress={() => {
-                setPostUrl("");
+              onPress={async () => {
+                const postImgUrl = await addPostImg();
+                console.warn(postImgUrl?.assets[0].uri);
+                setPostUrl(postImgUrl?.assets[0].uri);
+                // dispatch(setIsChangedToTrue());
               }}
             >
               <View
-                style={{ position: "absolute", top: 10, right: 55, zIndex: 10 }}
+                style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
               >
                 <Image
-                  source={require("../assets/icons/bin.png")}
+                  source={require("../assets/icons/pen.png")}
                   style={{ height: 35, width: 35 }}
                 />
               </View>
             </TouchableWithoutFeedback>
-          )}
+          </View>
+          <View style={styles.richTextContainer}>
+            <RichEditor
+              onChange={(descriptionText) => {
+                setCaptionText(descriptionText);
+              }}
+              ref={richText}
+              placeholder="Write a caption for your post...."
+              androidHardwareAccelerationDisabled={true}
+              style={styles.richTextEditorStyle}
+              initialHeight={250}
+            />
+            <RichToolbar
+              editor={richText}
+              selectedIconTint="#1b6e31"
+              iconTint="#8c8c8c"
+              actions={[
+                actions.setBold,
+                actions.setItalic,
+                actions.setStrikethrough,
+                actions.setUnderline,
+              ]}
+              style={styles.richTextToolbarStyle}
+            />
+          </View>
+
           <TouchableWithoutFeedback
-            onPress={async () => {
-              const postImgUrl = await addPostImg();
-              console.warn(postImgUrl?.assets[0].uri);
-              setPostUrl(postImgUrl?.assets[0].uri);
-              // dispatch(setIsChangedToTrue());
+            onPress={() => {
+              if (postUrl) {
+                uploadPostImage();
+                dispatch(changeNavigation("Home"));
+              } else {
+                Toast.show({
+                  type: "error",
+                  text1: "Please select the post image !!",
+                })
+              }
             }}
           >
-            <View
-              style={{ position: "absolute", top: 10, right: 10, zIndex: 10 }}
-            >
-              <Image
-                source={require("../assets/icons/pen.png")}
-                style={{ height: 35, width: 35 }}
-              />
+            <View style={landingPageStyles.button}>
+              <Text style={landingPageStyles.btnText}>Post</Text>
             </View>
           </TouchableWithoutFeedback>
         </View>
-        <View style={styles.richTextContainer}>
-          <RichEditor
-            onChange={(descriptionText) => {
-              setCaptionText(descriptionText);
-              if (descriptionText?.length > 200) {
-                setEditorIsDisabled(true);
-              }
-            }}
-            ref={richText}
-            // onChange={richTextHandle}
-            placeholder="Write a caption for your post...."
-            androidHardwareAccelerationDisabled={true}
-            style={styles.richTextEditorStyle}
-            initialHeight={250}
-            disabled={editorIsDiabled}
-          />
-          <RichToolbar
-            editor={richText}
-            selectedIconTint="#1b6e31"
-            iconTint="#8c8c8c"
-            actions={[
-              actions.setBold,
-              actions.setItalic,
-              actions.setStrikethrough,
-              actions.setUnderline,
-            ]}
-            style={styles.richTextToolbarStyle}
-          />
-          <Toast
-            style={{position: 'absolute',top: 0}}
-            text2Style={{
-              fontSize: 17,
-              fontWeight: "600",
-            }}
-          />
-        </View>
-        {/* {showDescError && (
-          <Text style={styles.errorTextStyle}>
-            Your content shouldn't be empty 🤔
-          </Text>
-        )} */}
-
-        {/* <TouchableOpacity
-          style={styles.saveButtonStyle}
-          onPress={() => {
-            console.warn(captionText);
-          }}
-        >
-          <Text style={styles.textButtonStyle}>Save</Text>
-        </TouchableOpacity> */}
-
-        {/* <RenderFormattedText
-          htmlContent={captionText ? captionText : "No Content"}
-        /> */}
-
-        {/* <WebView source={{html: '<p>Here I am</p>'}} /> */}
-
-        {/* <View
-          style={[inputBoxStyles.inputBox, { borderWidth: 2, marginTop: 15 }]}
-        >
-          <Icon
-            name="camera"
-            size={30}
-            color="#5a5a5a"
-            style={{ marginRight: 7 }}
-          />
-          <Text style={{ fontSize: 17, fontWeight: 500, color: "#5a5a5a" }}>
-            Add to your post
-          </Text>
-        </View> */}
-        {/* <InputField /> */}
-
-        <TouchableWithoutFeedback
-          onPress={() => {
-            if (postUrl) {
-              uploadPostImage();
-            } else {
-              Toast.show({
-                type: "error",
-                text2: "Please select the post image 📷",
-              });
-            }
-          }}
-        >
-          <View style={landingPageStyles.button}>
-            <Text style={landingPageStyles.btnText}>Post</Text>
-          </View>
-        </TouchableWithoutFeedback>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+      <Toast text1Style={{fontSize: 16}}/>
+    </>
   );
 };
 

@@ -5,7 +5,8 @@ import {
   View,
   Image,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { useSelector } from "react-redux";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -21,6 +22,7 @@ const ProfilePage = () => {
   const [likesTableData, setLikesTableData] = useState([]);
   const [commentPostId, setCommentPostId] = useState(null);
   const [isFetching, setIsFetching] = useState(true); // Added loading state
+  const [refreshing, setRefreshing] = useState(false); // Added refreshing state
   const commentsSectionRef = useRef();
 
   const getUserPosts = async () => {
@@ -46,9 +48,16 @@ const ProfilePage = () => {
       .eq("user_id", userId);
 
     if (error) {
-      console.log("Error occured while getting likes table data: ", error);
+      console.log("Error occurred while getting likes table data: ", error);
     }
     setLikesTableData(data);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await getUserPosts();
+    await getLikesTableData();
+    setRefreshing(false);
   };
 
   const postIds = likesTableData?.map((item) => item.post_id);
@@ -71,8 +80,11 @@ const ProfilePage = () => {
       style={{
         backgroundColor: "#fff",
         marginBottom: 60,
-        paddingTop: 40
+        paddingTop: 40,
       }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh}/>
+      }
     >
       <View
         style={{
@@ -156,34 +168,38 @@ const ProfilePage = () => {
           </Text>
         </View>
 
-        {
-          profileData.userBio && (
-            <View
-              style={{
-                display: "flex",
-                gap: 10,
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <FontAwesomeIcon name="user" size={27} color="#9e9e9e" />
-              <Text style={{ fontSize: 18, color: "#9e9e9e", fontWeight: 600 }}>
-                {profileData.userBio}
-              </Text>
-            </View>
-          )
-        }
+        {profileData.userBio && (
+          <View
+            style={{
+              display: "flex",
+              gap: 10,
+              flexDirection: "row",
+              alignItems: "center",
+            }}
+          >
+            <FontAwesomeIcon name="user" size={27} color="#9e9e9e" />
+            <Text style={{ fontSize: 18, color: "#9e9e9e", fontWeight: 600 }}>
+              {profileData.userBio}
+            </Text>
+          </View>
+        )}
       </View>
 
-      <Text style={{ paddingHorizontal: 20, fontSize: 28, fontWeight: "bold", marginVertical: 10 }}>
+      <Text
+        style={{
+          paddingHorizontal: 20,
+          fontSize: 28,
+          fontWeight: "bold",
+          marginVertical: 10,
+        }}
+      >
         Your Posts
       </Text>
 
       {isFetching ? (
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size={45} color="#33bc54" />
       ) : userPosts.length > 0 ? (
         userPosts.map((element, id) => {
-          console.warn(element);
           return (
             <View key={id}>
               <Post
@@ -199,7 +215,9 @@ const ProfilePage = () => {
           );
         })
       ) : (
-        <Text style={{ fontSize: 22, color: '#999', padding: 20 }}>You dont have any posts.</Text>
+        <Text style={{ fontSize: 22, color: "#999", padding: 20 }}>
+          You don't have any posts.
+        </Text>
       )}
 
       <CommentsSection

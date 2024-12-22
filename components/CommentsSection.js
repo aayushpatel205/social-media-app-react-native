@@ -93,7 +93,7 @@ const CommentsSection = forwardRef((props, ref) => {
               <Text style={{fontSize: 22,fontWeight: "bold"}}>Please start a comment !</Text>
             ) : (
               commentsData.map((element, index) => (
-                <CommentDisplay key={index} element={element} />
+                <CommentDisplay key={index} element={element} commentsData={commentsData} setCommentsData={setCommentsData}/>
               ))
             )}
           </View>

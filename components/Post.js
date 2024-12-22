@@ -4,8 +4,7 @@ import RenderFormattedText from "./RenderFormattedText";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { useSelector, useDispatch } from "react-redux";
 import { supabase } from "../lib/supabase";
-import { Menu, MenuItem, MenuDivider } from 'react-native-material-menu';
-import { setSavedPosts } from "../features/savedPostSlice";
+import { Menu, MenuItem } from 'react-native-material-menu';
 import Toast from "react-native-toast-message";
 
 const formatTimestampToMonthDay = (timestamp) => {
@@ -193,7 +192,7 @@ const Post = ({ element, postIds, setCommentPostId, id, dataReceived, setDataRec
           }}
         >
           {element.user_id === userId ? (
-            profileData.profileImg != "NULL" ? (
+            profileData.profileImg !== "NULL" && !profileData.profileImg ? (
               <Icon name="user" size={35} color="#666" />
             ) : (
               <Image

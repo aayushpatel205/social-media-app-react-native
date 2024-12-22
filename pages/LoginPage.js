@@ -100,6 +100,7 @@ const LoginPage = ({ navigation }) => {
         value={email}
         setValue={setEmail}
         iconName={"envelope"}
+        type="email-address"
         />
 
         {/* Password Field */}

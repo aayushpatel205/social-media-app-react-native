@@ -1,8 +1,8 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-env.js
 # dependencies
 node_modules/
+eas.json
 
 # Expo
 .expo/

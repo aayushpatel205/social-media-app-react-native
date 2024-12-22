@@ -14,6 +14,7 @@ import InputField from "../components/InputField";
 import Toast from "react-native-toast-message";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import PasswordField from "../components/PasswordField";
+import { validatePathConfig } from "@react-navigation/native";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -98,6 +99,7 @@ const SignUpPage = ({ navigation }) => {
           value={username}
           setValue={setUsername}
           iconName="user"
+          type="default"
         // element={{
         //   title: "username",
         //   value: username,
@@ -110,6 +112,7 @@ const SignUpPage = ({ navigation }) => {
           value={email}
           setValue={setEmail}
           iconName="envelope"
+          type="email-address"
         // element={{
         //   title: "Email",
         //   value: email,
@@ -125,6 +128,7 @@ const SignUpPage = ({ navigation }) => {
         />
 
         <InputField
+          type="phone-pad"
           title="phone number"
           value={phoneNumber}
           setValue={(value) => {

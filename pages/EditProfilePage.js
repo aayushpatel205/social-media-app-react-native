@@ -16,10 +16,9 @@ import { profilePageStyles } from "./ProfilePage";
 import InputField from "../components/InputField";
 import { supabase } from "../lib/supabase";
 import { useDispatch, useSelector } from "react-redux";
-import { setUserDetails } from "../features/profileSlice";
+import { setUserDetails , setProfileImgLink } from "../features/profileSlice";
 import { landingPageStyles } from "./LandingPage";
 import { addImage } from "../ImageAddFunction";
-import { setProfileImgLink } from "../features/profileSlice";
 import Toast from "react-native-toast-message";
 import Icon from "react-native-vector-icons/FontAwesome";
 
