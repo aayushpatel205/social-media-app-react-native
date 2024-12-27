@@ -2,7 +2,7 @@
   "expo": {
     "name": "social-media-app",
     "slug": "social-media-app",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -10,9 +10,6 @@
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
@@ -28,6 +25,7 @@
       "eas": {
         "projectId": "bc8b33a0-0b2f-4b22-b5ef-6202c54d3b7d"
       }
-    }
+    },
+    "runtimeVersion": "1.0.0"
   }
 }
