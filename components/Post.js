@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, Image, StyleSheet, Dimensions, TouchableOpacity, Alert } from "react-native";
 import RenderFormattedText from "./RenderFormattedText";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { supabase } from "../lib/supabase";
 import { Menu, MenuItem } from 'react-native-material-menu';
 import Toast from "react-native-toast-message";
@@ -26,8 +26,6 @@ const Post = ({ element, postIds, setCommentPostId, id, dataReceived, setDataRec
   const formattedDate = formatTimestampToMonthDay(element?.created_at);
   const [visible, setVisible] = useState(false);
   const [isSavedPost, setIsSavedPost] = useState(false);
-  const dispatch = useDispatch();
-
 
   const deleteFromSavedPostsTable = async (post_id, user_id) => {
     const { data, error } = await supabase
@@ -173,10 +171,6 @@ const Post = ({ element, postIds, setCommentPostId, id, dataReceived, setDataRec
     getNoOfComments();
   }, []);
 
-  // if (!element?.media_url || !noOfLikes || !noOfComments) {
-  //   return null; // Conditionally render nothing if requirements are not met
-  // }
-
   return (
     <>
       <View style={styles.postContainer}>
@@ -191,7 +185,7 @@ const Post = ({ element, postIds, setCommentPostId, id, dataReceived, setDataRec
             alignItems: "center",
           }}
         >
-          {element.user_id === userId ? (
+          {element.user_id === userId && currentRoute !== "SavedPosts"? (
             profileData.profileImg !== "NULL" && !profileData.profileImg ? (
               <Icon name="user" size={35} color="#666" />
             ) : (
@@ -219,35 +213,35 @@ const Post = ({ element, postIds, setCommentPostId, id, dataReceived, setDataRec
               </Text>
               <Text style={{ color: "#555555" }}>{formattedDate}</Text>
             </View>
-            {currentRoute === "SavedPosts" ? null : (
-              element?.user_id === userId ? (
-                <Menu
-                  style={{ width: 150 }}
-                  visible={visible}
-                  onRequestClose={() => setVisible(false)}
-                  anchor={
-                    <TouchableOpacity onPress={() => setVisible(true)}>
-                      <Icon name="ellipsis-h" size={27} />
-                    </TouchableOpacity>
-                  }
+            {element?.user_id === userId && currentRoute !== "SavedPosts" ? (
+              <Menu
+                style={{ width: 150 }}
+                visible={visible}
+                onRequestClose={() => setVisible(false)}
+                anchor={
+                  <TouchableOpacity onPress={() => setVisible(true)}>
+                    <Icon name="ellipsis-h" size={27} />
+                  </TouchableOpacity>
+                }
+              >
+                <MenuItem
+                  textStyle={{ fontSize: 16, color: "red" }}
+                  onPress={async () => {
+                    await deletePostAndImage();
+                    setDataReceived(dataReceived.filter((item) => item.post_id !== element.post_id));
+                    setVisible(false);
+                    Toast.show({
+                      type: "success",
+                      text1: "Post Deleted",
+                    });
+                  }}
                 >
-                  <MenuItem
-                    textStyle={{ fontSize: 16, color: "red" }}
-                    onPress={async () => {
-                      await deletePostAndImage();
-                      setDataReceived(dataReceived.filter((item) => item.post_id !== element.post_id));
-                      setVisible(false);
-                      Toast.show({
-                        type: "success",
-                        text1: "Post Deleted",
-                      });
-                    }}
-                  >
-                    Delete Post
-                  </MenuItem>
-                </Menu>
-              ) : null
-            )}
+                  Delete Post
+                </MenuItem>
+              </Menu>
+            ) : null}
+
+
 
           </View>
         </View>

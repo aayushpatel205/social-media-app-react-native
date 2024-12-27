@@ -41,8 +41,6 @@ const EditProfilePage = () => {
     const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
       setKeyboardVisible(false);
     });
-    console.log("data: ", data?.userBio);
-    console.log("data 2: ", data?.userAddress)
 
     return () => {
       showSubscription.remove();

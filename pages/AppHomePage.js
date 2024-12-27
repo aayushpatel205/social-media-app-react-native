@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Text,
   View,
@@ -12,19 +12,20 @@ import {
 import { supabase } from "../lib/supabase";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserDetails } from "../features/profileSlice";
-import * as NavigationBar from "expo-navigation-bar";
 import Icon from "react-native-vector-icons/FontAwesome";
 import CustomNavigationTab from "../components/CustomNavigationTab";
 import Post from "../components/Post";
 import CommentsSection from "../components/CommentsSection";
 import Toast from "react-native-toast-message";
+import { useFocusEffect } from '@react-navigation/native';
 
-const AppHomePage = ({ navigation }) => {
+const AppHomePage = ({ navigation, route }) => {
   const [dataReceived, setDataReceived] = useState([]);
   const [likesTableData, setLikesTableData] = useState([]);
   const [savedPostsData, setSavedPostsData] = useState([]);
   const [commentPostId, setCommentPostId] = useState(null);
-  const [refreshing, setRefreshing] = useState(false); // New state for pull-to-refresh
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false); // New state for refreshing
   const dispatch = useDispatch();
   const profileData = useSelector((state) => state?.profileReducer);
   const userId = profileData?.sessionData?.session.user.id;
@@ -38,16 +39,16 @@ const AppHomePage = ({ navigation }) => {
     }
   }, [commentPostId]);
 
-  const signOut = async()=>{
+  const signOut = async () => {
     const { error } = await supabase.auth.signOut();
-    if(error){
-      console.warn("Error occured while logging out !!");
+    if (error) {
+      console.warn("Error occurred while logging out!");
     }
-    // Confirm logout success
     Alert.alert("Logout Successful", "You have been logged out successfully.", [
-      { text: "OK", onPress: () => BackHandler.exitApp() } // Exit the app
+      { text: "OK", onPress: () => BackHandler.exitApp() }
     ]);
-  }
+  };
+
   const getLikesTableData = async () => {
     const { data, error } = await supabase
       .from("likes")
@@ -61,8 +62,10 @@ const AppHomePage = ({ navigation }) => {
   };
 
   const getSavedPostsData = async () => {
-    const { data, error } = await supabase.from("saved-posts").select('*')
-    .eq('user_id', userId);
+    const { data, error } = await supabase
+      .from("saved-posts")
+      .select('*')
+      .eq('user_id', userId);
     if (error) {
       console.log("Error occurred while getting saved posts data:", error);
     } else {
@@ -111,20 +114,35 @@ const AppHomePage = ({ navigation }) => {
   };
 
   const fetchData = async () => {
-    setRefreshing(true);
-    await Promise.all([
-      getData(userId),
-      getData2(userId),
-      getLikesTableData(),
-      getSavedPostsData(),
-    ]);
-    setRefreshing(false);
+    setLoading(true);
+    try {
+      await getData(userId);
+      await getData2(userId);
+      await getLikesTableData();
+      await getSavedPostsData();
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  useEffect(() => {
-    NavigationBar.setBackgroundColorAsync("#FFFFFF");
-    fetchData();
-  }, []);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchData(); // Re-fetch data on pull-to-refresh
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [])
+  );
 
   return (
     <View style={styles.container}>
@@ -145,26 +163,18 @@ const AppHomePage = ({ navigation }) => {
             size={30}
             color="#000"
             onPress={() =>
-              navigation.navigate("SavedPosts", {
-                myData: {
-                  postIds: likesTableData.map((item) => item.post_id),
-                  setCommentPostId,
-                  dataReceived,
-                  setDataReceived,
-                  savedPostsIds: savedPostsData.map((item) => item.post_id),
-                },
-              })
+              navigation.navigate("SavedPosts")
             }
           />
-          <Icon name="sign-out" size={30} color="#000" onPress={() => signOut()}/>
+          <Icon name="sign-out" size={30} color="#000" onPress={() => signOut()} />
         </View>
       </View>
-      {dataReceived?.length > 0 ? (
+      {!loading ? (
         <ScrollView
           style={{ height: "92%", width: "100%" }}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={fetchData} />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
         >
           {dataReceived.map((element, id) => (

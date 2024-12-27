@@ -6,7 +6,6 @@ import {
   View,
   TouchableWithoutFeedback,
   Image,
-  Alert,
 } from "react-native";
 import {
   actions,
@@ -23,7 +22,6 @@ import { changeNavigation } from "../features/navigationSlice";
 const PostEditor = () => {
   const dispatch = useDispatch();
   const richText = useRef();
-  // const profileData = useSelector((state) => state?.profileReducer);
   const { userDisplayName, profileImg, sessionData } = useSelector(
     (state) => state?.profileReducer
   );
@@ -48,16 +46,6 @@ const PostEditor = () => {
     );
   };
 
-  const submitContentHandle = () => {
-    const replaceHTML = descHTML.replace(/<(.|\n)*?>/g, "").trim();
-    const replaceWhiteSpace = replaceHTML.replace(/&nbsp;/g, "").trim();
-
-    if (replaceWhiteSpace.length <= 0) {
-      setShowDescError(true);
-    } else {
-      // send data to your server!
-    }
-  };
 
   const addPostImg = async () => {
     let _image = await ImagePicker.launchImageLibraryAsync({
@@ -116,9 +104,7 @@ const PostEditor = () => {
             <TouchableWithoutFeedback
               onPress={async () => {
                 const postImgUrl = await addPostImg();
-                console.warn(postImgUrl?.assets[0].uri);
                 setPostUrl(postImgUrl?.assets[0].uri);
-                // dispatch(setIsChangedToTrue());
               }}
             >
               <View

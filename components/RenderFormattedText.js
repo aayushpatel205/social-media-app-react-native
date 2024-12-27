@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import RenderHTML from "react-native-render-html";
-import { useWindowDimensions, View, Text } from "react-native";
+import { useWindowDimensions, View } from "react-native";
 
-const RenderFormattedText = ({ htmlContent}) => {
+const RenderFormattedText = ({ htmlContent }) => {
   const contentWidth = useWindowDimensions().width - 60;
   const tagsStyles = React.useMemo(
     () => ({

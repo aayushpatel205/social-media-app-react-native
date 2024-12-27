@@ -18,8 +18,6 @@ const CommentDisplay = ({ element, commentsData, setCommentsData }) => {
 
     if (error) {
       console.error("Error deleting comment:", error);
-    } else {
-      console.log("Comment deleted successfully");
     }
   }
 

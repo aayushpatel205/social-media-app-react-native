@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useRef, useEffect } from "react";
+import React, { forwardRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,14 +11,12 @@ import {
 } from "react-native";
 import ActionSheet from "react-native-actions-sheet";
 import Icon from "react-native-vector-icons/FontAwesome";
-import { useSelector , useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { supabase } from "../lib/supabase";
 import CommentDisplay from "./CommentDisplay";
 import * as NavigationBar from "expo-navigation-bar";
 
 const CommentsSection = forwardRef((props, ref) => {
-  const inputRef = useRef(null);
-  const dispatch = useDispatch();
   const [commentsData, setCommentsData] = useState(null);
   const [commentText, setCommentText] = useState();
   const profileData = useSelector((state) => state?.profileReducer);

@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableWithoutFeedback,
-  Image,
   Alert,
 } from "react-native";
 import { loginPageStyles } from "./LoginPage";
@@ -14,7 +13,6 @@ import InputField from "../components/InputField";
 import Toast from "react-native-toast-message";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import PasswordField from "../components/PasswordField";
-import { validatePathConfig } from "@react-navigation/native";
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -67,11 +65,6 @@ const SignUpPage = ({ navigation }) => {
       setFieldsToEmpty();
     }
   }
-
-  const [passwordIsVisible, setPasswordIsVisible] = useState(false);
-  const imgPath = passwordIsVisible
-    ? require("../assets/icons/unlock.png")
-    : require("../assets/icons/lock.png");
   return (
     <View style={loginPageStyles.container}>
       <View style={loginPageStyles.buttonBox}>
@@ -100,25 +93,14 @@ const SignUpPage = ({ navigation }) => {
           setValue={setUsername}
           iconName="user"
           type="default"
-        // element={{
-        //   title: "username",
-        //   value: username,
-        //   setValue: setUsername,
-        //   iconName: "user",
-        // }}
         />
+
         <InputField
           title='email'
           value={email}
           setValue={setEmail}
           iconName="envelope"
           type="email-address"
-        // element={{
-        //   title: "Email",
-        //   value: email,
-        //   setValue: setEmail,
-        //   iconName: "envelope",
-        // }}
         />
 
         {/* Password Field */}
