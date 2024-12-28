@@ -92,14 +92,6 @@ const SavedPosts = ({ route, navigation }) => {
     }
   };
 
-
-  // const onRefresh = async () => {
-  //     setRefreshing(true);
-  //     await getSavedPosts();
-  //     setRefreshing(false);
-  // };
-
-
   const fetchData = async () => {
     await getData(userId);
     await getData2(userId);
@@ -191,7 +183,7 @@ const SavedPosts = ({ route, navigation }) => {
                 <MaterialCommunityIcons name="chevron-left" size={45} color="#000" />
               </TouchableWithoutFeedback>
             </View>
-            <Text style={{ fontSize: 22, color: '#999' }}>No saved posts found.</Text>
+            <Text style={{ fontSize: 25, color: '#999' }}>No saved posts found.</Text>
           </View>
         )
       }
